@@ -19,6 +19,7 @@ public class CDataNode extends TextNode {
 
     /**
      * Get the unencoded, <b>non-normalized</b> text content of this CDataNode.
+     *
      * @return unencoded, non-normalized text
      */
     @Override
@@ -29,8 +30,8 @@ public class CDataNode extends TextNode {
     @Override
     void outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {
         accum
-            .append("<![CDATA[")
-            .append(getWholeText());
+                .append("<![CDATA[")
+                .append(getWholeText());
     }
 
     @Override

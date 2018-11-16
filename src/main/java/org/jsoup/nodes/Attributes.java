@@ -1,8 +1,8 @@
 package org.jsoup.nodes;
 
 import org.jsoup.SerializationException;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -32,17 +32,32 @@ import static org.jsoup.internal.Normalizer.lowerCase;
  */
 public class Attributes implements Iterable<Attribute>, Cloneable {
     protected static final String dataPrefix = "data-";
+    static final int NotFound = -1;
     private static final int InitialCapacity = 4; // todo - analyze Alexa 1MM sites, determine best setting
-
     // manages the key/val arrays
     private static final int GrowthFactor = 2;
     private static final String[] Empty = {};
-    static final int NotFound = -1;
     private static final String EmptyString = "";
-
-    private int size = 0; // number of slots used (not capacity, which is keys.length
     String[] keys = Empty;
     String[] vals = Empty;
+    private int size = 0; // number of slots used (not capacity, which is keys.length
+
+    // simple implementation of Arrays.copy, for support of Android API 8.
+    private static String[] copyOf(String[] orig, int size) {
+        final String[] copy = new String[size];
+        System.arraycopy(orig, 0, copy, 0,
+                Math.min(orig.length, size));
+        return copy;
+    }
+
+    // we track boolean attributes as null in values - they're just keys. so returns empty for consumers
+    static String checkNotNull(String val) {
+        return val == null ? EmptyString : val;
+    }
+
+    private static String dataKey(String key) {
+        return dataPrefix + key;
+    }
 
     // check there's room for more
     private void checkCapacity(int minNewSize) {
@@ -57,14 +72,6 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
 
         keys = copyOf(keys, newSize);
         vals = copyOf(vals, newSize);
-    }
-
-    // simple implementation of Arrays.copy, for support of Android API 8.
-    private static String[] copyOf(String[] orig, int size) {
-        final String[] copy = new String[size];
-        System.arraycopy(orig, 0, copy, 0,
-                Math.min(orig.length, size));
-        return copy;
     }
 
     int indexOfKey(String key) {
@@ -85,16 +92,12 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
         return NotFound;
     }
 
-    // we track boolean attributes as null in values - they're just keys. so returns empty for consumers
-    static String checkNotNull(String val) {
-        return val == null ? EmptyString : val;
-    }
-
     /**
-     Get an attribute value by key.
-     @param key the (case-sensitive) attribute key
-     @return the attribute value if set; or empty string if not set (or a boolean attribute).
-     @see #hasKey(String)
+     * Get an attribute value by key.
+     *
+     * @param key the (case-sensitive) attribute key
+     * @return the attribute value if set; or empty string if not set (or a boolean attribute).
+     * @see #hasKey(String)
      */
     public String get(String key) {
         int i = indexOfKey(key);
@@ -103,6 +106,7 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
 
     /**
      * Get an attribute's value by case-insensitive key
+     *
      * @param key the attribute name
      * @return the first matching attribute value if set; or empty string if not set (ora boolean attribute).
      */
@@ -121,7 +125,8 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
 
     /**
      * Set a new attribute, or replace an existing one by key.
-     * @param key case sensitive attribute key
+     *
+     * @param key   case sensitive attribute key
      * @param value attribute value
      * @return these attributes, for chaining
      */
@@ -140,14 +145,14 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
             vals[i] = value;
             if (!keys[i].equals(key)) // case changed, update
                 keys[i] = key;
-        }
-        else
+        } else
             add(key, value);
     }
 
     /**
      * Set a new boolean attribute, remove attribute if value is false.
-     * @param key case <b>insensitive</b> attribute key
+     *
+     * @param key   case <b>insensitive</b> attribute key
      * @param value attribute value
      * @return these attributes, for chaining
      */
@@ -160,9 +165,10 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     }
 
     /**
-     Set a new attribute, or replace an existing one by key.
-     @param attribute attribute with case sensitive key
-     @return these attributes, for chaining
+     * Set a new attribute, or replace an existing one by key.
+     *
+     * @param attribute attribute with case sensitive key
+     * @return these attributes, for chaining
      */
     public Attributes put(Attribute attribute) {
         Validate.notNull(attribute);
@@ -185,8 +191,9 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     }
 
     /**
-     Remove an attribute by key. <b>Case sensitive.</b>
-     @param key attribute key to remove
+     * Remove an attribute by key. <b>Case sensitive.</b>
+     *
+     * @param key attribute key to remove
      */
     public void remove(String key) {
         int i = indexOfKey(key);
@@ -195,8 +202,9 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     }
 
     /**
-     Remove an attribute by key. <b>Case insensitive.</b>
-     @param key attribute key to remove
+     * Remove an attribute by key. <b>Case insensitive.</b>
+     *
+     * @param key attribute key to remove
      */
     public void removeIgnoreCase(String key) {
         int i = indexOfKeyIgnoreCase(key);
@@ -205,34 +213,38 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     }
 
     /**
-     Tests if these attributes contain an attribute with this key.
-     @param key case-sensitive key to check for
-     @return true if key exists, false otherwise
+     * Tests if these attributes contain an attribute with this key.
+     *
+     * @param key case-sensitive key to check for
+     * @return true if key exists, false otherwise
      */
     public boolean hasKey(String key) {
         return indexOfKey(key) != NotFound;
     }
 
     /**
-     Tests if these attributes contain an attribute with this key.
-     @param key key to check for
-     @return true if key exists, false otherwise
+     * Tests if these attributes contain an attribute with this key.
+     *
+     * @param key key to check for
+     * @return true if key exists, false otherwise
      */
     public boolean hasKeyIgnoreCase(String key) {
         return indexOfKeyIgnoreCase(key) != NotFound;
     }
 
     /**
-     Get the number of attributes in this set.
-     @return size
+     * Get the number of attributes in this set.
+     *
+     * @return size
      */
     public int size() {
         return size;
     }
 
     /**
-     Add all the attributes from the incoming set to this set.
-     @param incoming attributes to add to these attributes.
+     * Add all the attributes from the incoming set to this set.
+     *
+     * @param incoming attributes to add to these attributes.
      */
     public void addAll(Attributes incoming) {
         if (incoming.size() == 0)
@@ -270,15 +282,16 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     }
 
     /**
-     Get the attributes as a List, for iteration.
-     @return an view of the attributes as an unmodifialbe List.
+     * Get the attributes as a List, for iteration.
+     *
+     * @return an view of the attributes as an unmodifialbe List.
      */
     public List<Attribute> asList() {
         ArrayList<Attribute> list = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Attribute attr = vals[i] == null ?
-                new BooleanAttribute(keys[i]) : // deprecated class, but maybe someone still wants it
-                new Attribute(keys[i], vals[i], Attributes.this);
+                    new BooleanAttribute(keys[i]) : // deprecated class, but maybe someone still wants it
+                    new Attribute(keys[i], vals[i], Attributes.this);
             list.add(attr);
         }
         return Collections.unmodifiableList(list);
@@ -287,6 +300,7 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     /**
      * Retrieves a filtered view of attributes that are HTML5 custom data attributes; that is, attributes with keys
      * starting with {@code data-}.
+     *
      * @return map of custom data attributes.
      */
     public Map<String, String> dataset() {
@@ -294,9 +308,10 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
     }
 
     /**
-     Get the HTML representation of these attributes.
-     @return HTML
-     @throws SerializationException if the HTML representation of the attributes cannot be constructed.
+     * Get the HTML representation of these attributes.
+     *
+     * @return HTML
+     * @throws SerializationException if the HTML representation of the attributes cannot be constructed.
      */
     public String html() {
         StringBuilder sb = StringUtil.borrowBuilder();
@@ -332,6 +347,7 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
 
     /**
      * Checks if these attributes are equal to another set of attributes, by comparing the two sets
+     *
      * @param o attributes to compare with
      * @return if both sets of attributes have the same content
      */
@@ -349,6 +365,7 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
 
     /**
      * Calculates the hashcode of these attributes, by iterating all attributes and summing their hashcodes.
+     *
      * @return calculated hashcode
      */
     @Override
@@ -422,6 +439,7 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
         private class DatasetIterator implements Iterator<Map.Entry<String, String>> {
             private Iterator<Attribute> attrIter = attributes.iterator();
             private Attribute attr;
+
             public boolean hasNext() {
                 while (attrIter.hasNext()) {
                     attr = attrIter.next();
@@ -438,9 +456,5 @@ public class Attributes implements Iterable<Attribute>, Cloneable {
                 attributes.remove(attr.getKey());
             }
         }
-    }
-
-    private static String dataKey(String key) {
-        return dataPrefix + key;
     }
 }

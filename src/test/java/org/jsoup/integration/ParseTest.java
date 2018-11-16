@@ -6,10 +6,16 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Integration test: parses from real-world example HTML.
@@ -17,6 +23,23 @@ import static org.junit.Assert.*;
  * @author Jonathan Hedley, jonathan@hedley.net
  */
 public class ParseTest {
+
+    public static File getFile(String resourceName) {
+        try {
+            File file = new File(ParseTest.class.getResource(resourceName).toURI());
+            return file;
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static InputStream inputStreamFrom(String s) {
+        try {
+            return new ByteArrayInputStream(s.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     public void testSmhBizArticle() throws IOException {
@@ -176,23 +199,6 @@ public class ParseTest {
         Element form = doc.select("#form").first();
         assertEquals(2, form.children().size());
         assertEquals("UTF-8", doc.outputSettings().charset().name());
-    }
-
-    public static File getFile(String resourceName) {
-        try {
-            File file = new File(ParseTest.class.getResource(resourceName).toURI());
-            return file;
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    public static InputStream inputStreamFrom(String s) {
-        try {
-            return new ByteArrayInputStream(s.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

@@ -5,7 +5,9 @@ import org.junit.Test;
 
 import java.io.StringReader;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test suite for character reader.
@@ -15,7 +17,8 @@ import static org.junit.Assert.*;
 public class CharacterReaderTest {
     public final static int maxBufferLen = CharacterReader.maxBufferLen;
 
-    @Test public void consume() {
+    @Test
+    public void consume() {
         CharacterReader r = new CharacterReader("one");
         assertEquals(0, r.pos());
         assertEquals('o', r.current());
@@ -31,7 +34,8 @@ public class CharacterReaderTest {
         assertEquals(CharacterReader.EOF, r.consume());
     }
 
-    @Test public void unconsume() {
+    @Test
+    public void unconsume() {
         CharacterReader r = new CharacterReader("one");
         assertEquals('o', r.consume());
         assertEquals('n', r.current());
@@ -54,7 +58,8 @@ public class CharacterReaderTest {
         assertEquals(CharacterReader.EOF, r.current());
     }
 
-    @Test public void mark() {
+    @Test
+    public void mark() {
         CharacterReader r = new CharacterReader("one");
         r.consume();
         r.mark();
@@ -65,7 +70,8 @@ public class CharacterReaderTest {
         assertEquals('n', r.consume());
     }
 
-    @Test public void consumeToEnd() {
+    @Test
+    public void consumeToEnd() {
         String in = "one two three";
         CharacterReader r = new CharacterReader(in);
         String toEnd = r.consumeToEnd();
@@ -73,7 +79,8 @@ public class CharacterReaderTest {
         assertTrue(r.isEmpty());
     }
 
-    @Test public void nextIndexOfChar() {
+    @Test
+    public void nextIndexOfChar() {
         String in = "blah blah";
         CharacterReader r = new CharacterReader(in);
 
@@ -87,7 +94,8 @@ public class CharacterReaderTest {
         assertEquals(-1, r.nextIndexOf('x'));
     }
 
-    @Test public void nextIndexOfString() {
+    @Test
+    public void nextIndexOfString() {
         String in = "One Two something Two Three Four";
         CharacterReader r = new CharacterReader(in);
 
@@ -99,12 +107,14 @@ public class CharacterReaderTest {
         assertEquals(-1, r.nextIndexOf("Two"));
     }
 
-    @Test public void nextIndexOfUnmatched() {
+    @Test
+    public void nextIndexOfUnmatched() {
         CharacterReader r = new CharacterReader("<[[one]]");
         assertEquals(-1, r.nextIndexOf("]]>"));
     }
 
-    @Test public void consumeToChar() {
+    @Test
+    public void consumeToChar() {
         CharacterReader r = new CharacterReader("One Two Three");
         assertEquals("One ", r.consumeTo('T'));
         assertEquals("", r.consumeTo('T')); // on Two
@@ -114,7 +124,8 @@ public class CharacterReaderTest {
         assertEquals("hree", r.consumeTo('T')); // consume to end
     }
 
-    @Test public void consumeToString() {
+    @Test
+    public void consumeToString() {
         CharacterReader r = new CharacterReader("One Two Two Four");
         assertEquals("One ", r.consumeTo("Two"));
         assertEquals('T', r.consume());
@@ -123,14 +134,16 @@ public class CharacterReaderTest {
         assertEquals("wo Four", r.consumeTo("Qux"));
     }
 
-    @Test public void advance() {
+    @Test
+    public void advance() {
         CharacterReader r = new CharacterReader("One Two Three");
         assertEquals('O', r.consume());
         r.advance();
         assertEquals('e', r.consume());
     }
 
-    @Test public void consumeToAny() {
+    @Test
+    public void consumeToAny() {
         CharacterReader r = new CharacterReader("One &bar; qux");
         assertEquals("One ", r.consumeToAny('&', ';'));
         assertTrue(r.matches('&'));
@@ -141,7 +154,8 @@ public class CharacterReaderTest {
         assertEquals(" qux", r.consumeToAny('&', ';'));
     }
 
-    @Test public void consumeLetterSequence() {
+    @Test
+    public void consumeLetterSequence() {
         CharacterReader r = new CharacterReader("One &bar; qux");
         assertEquals("One", r.consumeLetterSequence());
         assertEquals(" &", r.consumeTo("bar;"));
@@ -149,7 +163,8 @@ public class CharacterReaderTest {
         assertEquals("; qux", r.consumeToEnd());
     }
 
-    @Test public void consumeLetterThenDigitSequence() {
+    @Test
+    public void consumeLetterThenDigitSequence() {
         CharacterReader r = new CharacterReader("One12 Two &bar; qux");
         assertEquals("One12", r.consumeLetterThenDigitSequence());
         assertEquals(' ', r.consume());
@@ -157,7 +172,8 @@ public class CharacterReaderTest {
         assertEquals(" &bar; qux", r.consumeToEnd());
     }
 
-    @Test public void matches() {
+    @Test
+    public void matches() {
         CharacterReader r = new CharacterReader("One Two Three");
         assertTrue(r.matches('O'));
         assertTrue(r.matches("One Two Three"));
@@ -191,7 +207,8 @@ public class CharacterReaderTest {
         assertFalse(r.matchesIgnoreCase("ne"));
     }
 
-    @Test public void containsIgnoreCase() {
+    @Test
+    public void containsIgnoreCase() {
         CharacterReader r = new CharacterReader("One TWO three");
         assertTrue(r.containsIgnoreCase("two"));
         assertTrue(r.containsIgnoreCase("three"));
@@ -199,7 +216,8 @@ public class CharacterReaderTest {
         assertFalse(r.containsIgnoreCase("one"));
     }
 
-    @Test public void matchesAny() {
+    @Test
+    public void matchesAny() {
         char[] scan = {' ', '\n', '\t'};
         CharacterReader r = new CharacterReader("One\nTwo\tThree");
         assertFalse(r.matchesAny(scan));
@@ -209,7 +227,8 @@ public class CharacterReaderTest {
         assertFalse(r.matchesAny(scan));
     }
 
-    @Test public void cachesStrings() {
+    @Test
+    public void cachesStrings() {
         CharacterReader r = new CharacterReader("Check\tCheck\tCheck\tCHOKE\tA string that is longer than 16 chars");
         String one = r.consumeTo('\t');
         r.consume();

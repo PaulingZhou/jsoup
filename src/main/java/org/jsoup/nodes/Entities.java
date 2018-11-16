@@ -1,8 +1,8 @@
 package org.jsoup.nodes;
 
 import org.jsoup.SerializationException;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.parser.CharacterReader;
 import org.jsoup.parser.Parser;
 
@@ -19,59 +19,12 @@ import static org.jsoup.nodes.Entities.EscapeMode.extended;
  * HTML named character references</a>.
  */
 public class Entities {
+    static final int codepointRadix = 36;
     private static final int empty = -1;
     private static final String emptyName = "";
-    static final int codepointRadix = 36;
     private static final char[] codeDelims = {',', ';'};
     private static final HashMap<String, String> multipoints = new HashMap<>(); // name -> multiple character references
     private static final Document.OutputSettings DefaultOutput = new Document.OutputSettings();
-
-    public enum EscapeMode {
-        /**
-         * Restricted entities suitable for XHTML output: lt, gt, amp, and quot only.
-         */
-        xhtml(EntitiesData.xmlPoints, 4),
-        /**
-         * Default HTML output entities.
-         */
-        base(EntitiesData.basePoints, 106),
-        /**
-         * Complete HTML entities.
-         */
-        extended(EntitiesData.fullPoints, 2125);
-
-        // table of named references to their codepoints. sorted so we can binary search. built by BuildEntities.
-        private String[] nameKeys;
-        private int[] codeVals; // limitation is the few references with multiple characters; those go into multipoints.
-
-        // table of codepoints to named entities.
-        private int[] codeKeys; // we don' support multicodepoints to single named value currently
-        private String[] nameVals;
-
-        EscapeMode(String file, int size) {
-            load(this, file, size);
-        }
-
-        int codepointForName(final String name) {
-            int index = Arrays.binarySearch(nameKeys, name);
-            return index >= 0 ? codeVals[index] : empty;
-        }
-
-        String nameForCodepoint(final int codepoint) {
-            final int index = Arrays.binarySearch(codeKeys, codepoint);
-            if (index >= 0) {
-                // the results are ordered so lower case versions of same codepoint come after uppercase, and we prefer to emit lower
-                // (and binary search for same item with multi results is undefined
-                return (index < nameVals.length - 1 && codeKeys[index + 1] == codepoint) ?
-                    nameVals[index + 1] : nameVals[index];
-            }
-            return emptyName;
-        }
-
-        private int size() {
-            return nameKeys.length;
-        }
-    }
 
     private Entities() {
     }
@@ -143,7 +96,7 @@ public class Entities {
      * HTML escape an input string. That is, {@code <} is returned as {@code &lt;}
      *
      * @param string the un-escaped string to escape
-     * @param out the output settings to use
+     * @param out    the output settings to use
      * @return the escaped string
      */
     public static String escape(String string, Document.OutputSettings out) {
@@ -299,18 +252,6 @@ public class Entities {
         }
     }
 
-    enum CoreCharset {
-        ascii, utf, fallback;
-
-        static CoreCharset byName(final String name) {
-            if (name.equals("US-ASCII"))
-                return ascii;
-            if (name.startsWith("UTF-")) // covers UTF-8, UTF-16, et al
-                return utf;
-            return fallback;
-        }
-    }
-
     private static void load(EscapeMode e, String pointsData, int size) {
         e.nameKeys = new String[size];
         e.codeVals = new int[size];
@@ -351,5 +292,64 @@ public class Entities {
         }
 
         Validate.isTrue(i == size, "Unexpected count of entities loaded");
+    }
+
+    public enum EscapeMode {
+        /**
+         * Restricted entities suitable for XHTML output: lt, gt, amp, and quot only.
+         */
+        xhtml(EntitiesData.xmlPoints, 4),
+        /**
+         * Default HTML output entities.
+         */
+        base(EntitiesData.basePoints, 106),
+        /**
+         * Complete HTML entities.
+         */
+        extended(EntitiesData.fullPoints, 2125);
+
+        // table of named references to their codepoints. sorted so we can binary search. built by BuildEntities.
+        private String[] nameKeys;
+        private int[] codeVals; // limitation is the few references with multiple characters; those go into multipoints.
+
+        // table of codepoints to named entities.
+        private int[] codeKeys; // we don' support multicodepoints to single named value currently
+        private String[] nameVals;
+
+        EscapeMode(String file, int size) {
+            load(this, file, size);
+        }
+
+        int codepointForName(final String name) {
+            int index = Arrays.binarySearch(nameKeys, name);
+            return index >= 0 ? codeVals[index] : empty;
+        }
+
+        String nameForCodepoint(final int codepoint) {
+            final int index = Arrays.binarySearch(codeKeys, codepoint);
+            if (index >= 0) {
+                // the results are ordered so lower case versions of same codepoint come after uppercase, and we prefer to emit lower
+                // (and binary search for same item with multi results is undefined
+                return (index < nameVals.length - 1 && codeKeys[index + 1] == codepoint) ?
+                        nameVals[index + 1] : nameVals[index];
+            }
+            return emptyName;
+        }
+
+        private int size() {
+            return nameKeys.length;
+        }
+    }
+
+    enum CoreCharset {
+        ascii, utf, fallback;
+
+        static CoreCharset byName(final String name) {
+            if (name.equals("US-ASCII"))
+                return ascii;
+            if (name.startsWith("UTF-")) // covers UTF-8, UTF-16, et al
+                return utf;
+            return fallback;
+        }
     }
 }

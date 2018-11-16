@@ -19,6 +19,7 @@ public class ParseError {
 
     /**
      * Retrieve the error message.
+     *
      * @return the error message.
      */
     public String getErrorMessage() {
@@ -27,6 +28,7 @@ public class ParseError {
 
     /**
      * Retrieves the offset of the error.
+     *
      * @return error offset within input
      */
     public int getPosition() {

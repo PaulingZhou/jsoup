@@ -6,7 +6,8 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for FormElement
@@ -14,7 +15,8 @@ import static org.junit.Assert.*;
  * @author Jonathan Hedley
  */
 public class FormElementTest {
-    @Test public void hasAssociatedControls() {
+    @Test
+    public void hasAssociatedControls() {
         //"button", "fieldset", "input", "keygen", "object", "output", "select", "textarea"
         String html = "<form id=1><button id=1><fieldset id=2 /><input id=3><keygen id=4><object id=5><output id=6>" +
                 "<select id=7><option></select><textarea id=8><p id=9>";
@@ -24,7 +26,8 @@ public class FormElementTest {
         assertEquals(8, form.elements().size());
     }
 
-    @Test public void createsFormData() {
+    @Test
+    public void createsFormData() {
         String html = "<form><input name='one' value='two'><select name='three'><option value='not'>" +
                 "<option value='four' selected><option value='five' selected><textarea name=six>seven</textarea>" +
                 "<input name='seven' type='radio' value='on' checked><input name='seven' type='radio' value='off'>" +
@@ -46,7 +49,8 @@ public class FormElementTest {
         // ten should not appear, disabled
     }
 
-    @Test public void createsSubmitableConnection() {
+    @Test
+    public void createsSubmitableConnection() {
         String html = "<form action='/search'><input name='q'></form>";
         Document doc = Jsoup.parse(html, "http://example.com/");
         doc.select("[name=q]").attr("value", "jsoup");
@@ -64,7 +68,8 @@ public class FormElementTest {
         assertEquals(Connection.Method.POST, con2.request().method());
     }
 
-    @Test public void actionWithNoValue() {
+    @Test
+    public void actionWithNoValue() {
         String html = "<form><input name='q'></form>";
         Document doc = Jsoup.parse(html, "http://example.com/");
         FormElement form = ((FormElement) doc.select("form").first());
@@ -73,7 +78,8 @@ public class FormElementTest {
         assertEquals("http://example.com/", con.request().url().toExternalForm());
     }
 
-    @Test public void actionWithNoBaseUri() {
+    @Test
+    public void actionWithNoBaseUri() {
         String html = "<form><input name='q'></form>";
         Document doc = Jsoup.parse(html);
         FormElement form = ((FormElement) doc.select("form").first());
@@ -90,7 +96,8 @@ public class FormElementTest {
         assertTrue(threw);
     }
 
-    @Test public void formsAddedAfterParseAreFormElements() {
+    @Test
+    public void formsAddedAfterParseAreFormElements() {
         Document doc = Jsoup.parse("<body />");
         doc.body().html("<form action='http://example.com/search'><input name='q' value='search'>");
         Element formEl = doc.select("form").first();
@@ -100,7 +107,8 @@ public class FormElementTest {
         assertEquals(1, form.elements().size());
     }
 
-    @Test public void controlsAddedAfterParseAreLinkedWithForms() {
+    @Test
+    public void controlsAddedAfterParseAreLinkedWithForms() {
         Document doc = Jsoup.parse("<body />");
         doc.body().html("<form />");
 
@@ -115,7 +123,8 @@ public class FormElementTest {
         assertEquals("foo=bar", data.get(0).toString());
     }
 
-    @Test public void usesOnForCheckboxValueIfNoValueSet() {
+    @Test
+    public void usesOnForCheckboxValueIfNoValueSet() {
         Document doc = Jsoup.parse("<form><input type=checkbox checked name=foo></form>");
         FormElement form = (FormElement) doc.select("form").first();
         List<Connection.KeyVal> data = form.formData();
@@ -123,7 +132,8 @@ public class FormElementTest {
         assertEquals("foo", data.get(0).key());
     }
 
-    @Test public void adoptedFormsRetainInputs() {
+    @Test
+    public void adoptedFormsRetainInputs() {
         // test for https://github.com/jhy/jsoup/issues/249
         String html = "<html>\n" +
                 "<body>  \n" +
@@ -145,7 +155,8 @@ public class FormElementTest {
         assertEquals("login", data.get(2).key());
     }
 
-    @Test public void removeFormElement() {
+    @Test
+    public void removeFormElement() {
         String html = "<html>\n" +
                 "  <body> \n" +
                 "      <form action=\"/hello.php\" method=\"post\">\n" +

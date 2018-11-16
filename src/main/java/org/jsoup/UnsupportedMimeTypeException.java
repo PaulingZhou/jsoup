@@ -25,6 +25,6 @@ public class UnsupportedMimeTypeException extends IOException {
 
     @Override
     public String toString() {
-        return super.toString() + ". Mimetype=" + mimeType + ", URL="+url;
+        return super.toString() + ". Mimetype=" + mimeType + ", URL=" + url;
     }
 }

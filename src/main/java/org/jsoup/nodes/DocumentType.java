@@ -1,7 +1,7 @@
 package org.jsoup.nodes;
 
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Document.OutputSettings.Syntax;
 
 import java.io.IOException;
@@ -21,7 +21,8 @@ public class DocumentType extends LeafNode {
 
     /**
      * Create a new doctype element.
-     * @param name the doctype's name
+     *
+     * @param name     the doctype's name
      * @param publicId the doctype's public ID
      * @param systemId the doctype's system ID
      */
@@ -39,10 +40,11 @@ public class DocumentType extends LeafNode {
 
     /**
      * Create a new doctype element.
-     * @param name the doctype's name
+     *
+     * @param name     the doctype's name
      * @param publicId the doctype's public ID
      * @param systemId the doctype's system ID
-     * @param baseUri unused
+     * @param baseUri  unused
      * @deprecated
      */
     public DocumentType(String name, String publicId, String systemId, String baseUri) {
@@ -56,10 +58,11 @@ public class DocumentType extends LeafNode {
 
     /**
      * Create a new doctype element.
-     * @param name the doctype's name
+     *
+     * @param name     the doctype's name
      * @param publicId the doctype's public ID
      * @param systemId the doctype's system ID
-     * @param baseUri unused
+     * @param baseUri  unused
      * @deprecated
      */
     public DocumentType(String name, String pubSysKey, String publicId, String systemId, String baseUri) {
@@ -70,6 +73,7 @@ public class DocumentType extends LeafNode {
         attr(PUBLIC_ID, publicId);
         attr(SYSTEM_ID, systemId);
     }
+
     public void setPubSysKey(String value) {
         if (value != null)
             attr(PUB_SYS_KEY, value);

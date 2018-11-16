@@ -46,6 +46,11 @@ public class ConnectTest {
         TestServer.stop();
     }
 
+    private static String ihVal(String key, Document doc) {
+        final Element first = doc.select("th:contains(" + key + ") + td").first();
+        return first != null ? first.text() : null;
+    }
+
     @Test
     public void canConnectToLocalServer() throws IOException {
         String url = HelloServlet.Url;
@@ -81,17 +86,12 @@ public class ConnectTest {
         assertTrue(threw);
     }
 
-    private static String ihVal(String key, Document doc) {
-        final Element first = doc.select("th:contains(" + key + ") + td").first();
-        return first != null ? first.text() : null;
-    }
-
     @Test
     public void doesPost() throws IOException {
         Document doc = Jsoup.connect(echoUrl)
-            .data("uname", "Jsoup", "uname", "Jonathan", "百", "度一下")
-            .cookie("auth", "token")
-            .post();
+                .data("uname", "Jsoup", "uname", "Jonathan", "百", "度一下")
+                .cookie("auth", "token")
+                .post();
 
         assertEquals("POST", ihVal("Method", doc));
         assertEquals("gzip", ihVal("Accept-Encoding", doc));
@@ -105,11 +105,11 @@ public class ConnectTest {
     public void sendsRequestBodyJsonWithData() throws IOException {
         final String body = "{key:value}";
         Document doc = Jsoup.connect(echoUrl)
-            .requestBody(body)
-            .header("Content-Type", "application/json")
-            .userAgent(browserUa)
-            .data("foo", "true")
-            .post();
+                .requestBody(body)
+                .header("Content-Type", "application/json")
+                .userAgent(browserUa)
+                .data("foo", "true")
+                .post();
         assertEquals("POST", ihVal("Method", doc));
         assertEquals("application/json", ihVal("Content-Type", doc));
         assertEquals("foo=true", ihVal("Query String", doc));
@@ -120,10 +120,10 @@ public class ConnectTest {
     public void sendsRequestBodyJsonWithoutData() throws IOException {
         final String body = "{key:value}";
         Document doc = Jsoup.connect(echoUrl)
-            .requestBody(body)
-            .header("Content-Type", "application/json")
-            .userAgent(browserUa)
-            .post();
+                .requestBody(body)
+                .header("Content-Type", "application/json")
+                .userAgent(browserUa)
+                .post();
         assertEquals("POST", ihVal("Method", doc));
         assertEquals("application/json", ihVal("Content-Type", doc));
         assertEquals(body, ihVal("Post Data", doc));
@@ -133,10 +133,10 @@ public class ConnectTest {
     public void sendsRequestBody() throws IOException {
         final String body = "{key:value}";
         Document doc = Jsoup.connect(echoUrl)
-            .requestBody(body)
-            .header("Content-Type", "text/plain")
-            .userAgent(browserUa)
-            .post();
+                .requestBody(body)
+                .header("Content-Type", "text/plain")
+                .userAgent(browserUa)
+                .post();
         assertEquals("POST", ihVal("Method", doc));
         assertEquals("text/plain", ihVal("Content-Type", doc));
         assertEquals(body, ihVal("Post Data", doc));
@@ -146,11 +146,11 @@ public class ConnectTest {
     public void sendsRequestBodyWithUrlParams() throws IOException {
         final String body = "{key:value}";
         Document doc = Jsoup.connect(echoUrl)
-            .requestBody(body)
-            .data("uname", "Jsoup", "uname", "Jonathan", "百", "度一下")
-            .header("Content-Type", "text/plain") // todo - if user sets content-type, we should append postcharset
-            .userAgent(browserUa)
-            .post();
+                .requestBody(body)
+                .data("uname", "Jsoup", "uname", "Jonathan", "百", "度一下")
+                .header("Content-Type", "text/plain") // todo - if user sets content-type, we should append postcharset
+                .userAgent(browserUa)
+                .post();
         assertEquals("POST", ihVal("Method", doc));
         assertEquals("uname=Jsoup&uname=Jonathan&%E7%99%BE=%E5%BA%A6%E4%B8%80%E4%B8%8B", ihVal("Query String", doc));
         assertEquals(body, ihVal("Post Data", doc));
@@ -159,9 +159,9 @@ public class ConnectTest {
     @Test
     public void doesGet() throws IOException {
         Connection con = Jsoup.connect(echoUrl + "?what=the")
-            .userAgent("Mozilla")
-            .referrer("http://example.com")
-            .data("what", "about & me?");
+                .userAgent("Mozilla")
+                .referrer("http://example.com")
+                .data("what", "about & me?");
 
         Document doc = con.get();
         assertEquals("what=the&what=about+%26+me%3F", ihVal("Query String", doc));
@@ -173,10 +173,10 @@ public class ConnectTest {
     @Test
     public void doesPut() throws IOException {
         Connection.Response res = Jsoup.connect(echoUrl)
-            .data("uname", "Jsoup", "uname", "Jonathan", "百", "度一下")
-            .cookie("auth", "token")
-            .method(Connection.Method.PUT)
-            .execute();
+                .data("uname", "Jsoup", "uname", "Jonathan", "百", "度一下")
+                .cookie("auth", "token")
+                .method(Connection.Method.PUT)
+                .execute();
 
         Document doc = res.parse();
         assertEquals("PUT", ihVal("Method", doc));
@@ -186,15 +186,16 @@ public class ConnectTest {
 
     // Slow Rider tests. Ignored by default so tests don't take aaages
     @Ignore
-    @Test public void canInterruptBodyStringRead() throws IOException, InterruptedException {
+    @Test
+    public void canInterruptBodyStringRead() throws IOException, InterruptedException {
         // todo - implement in interruptable channels, so it's immediate
         final String[] body = new String[1];
         Thread runner = new Thread(new Runnable() {
             public void run() {
                 try {
                     Connection.Response res = Jsoup.connect(SlowRider.Url)
-                        .timeout(15 * 1000)
-                        .execute();
+                            .timeout(15 * 1000)
+                            .execute();
                     body[0] = res.body();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -214,15 +215,16 @@ public class ConnectTest {
     }
 
     @Ignore
-    @Test public void canInterruptDocumentRead() throws IOException, InterruptedException {
+    @Test
+    public void canInterruptDocumentRead() throws IOException, InterruptedException {
         // todo - implement in interruptable channels, so it's immediate
         final String[] body = new String[1];
         Thread runner = new Thread(new Runnable() {
             public void run() {
                 try {
                     Connection.Response res = Jsoup.connect(SlowRider.Url)
-                        .timeout(15 * 1000)
-                        .execute();
+                            .timeout(15 * 1000)
+                            .execute();
                     body[0] = res.parse().text();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -241,7 +243,8 @@ public class ConnectTest {
     }
 
     @Ignore
-    @Test public void totalTimeout() throws IOException {
+    @Test
+    public void totalTimeout() throws IOException {
         int timeout = 3 * 1000;
         long start = System.currentTimeMillis();
         boolean threw = false;
@@ -259,22 +262,24 @@ public class ConnectTest {
     }
 
     @Ignore
-    @Test public void slowReadOk() throws IOException {
+    @Test
+    public void slowReadOk() throws IOException {
         // make sure that a slow read that is under the request timeout is still OK
         Document doc = Jsoup.connect(SlowRider.Url)
-            .data(SlowRider.MaxTimeParam, "2000") // the request completes in 2 seconds
-            .get();
+                .data(SlowRider.MaxTimeParam, "2000") // the request completes in 2 seconds
+                .get();
 
         Element h1 = doc.selectFirst("h1");
         assertEquals("outatime", h1.text());
     }
 
     @Ignore
-    @Test public void infiniteReadSupported() throws IOException {
+    @Test
+    public void infiniteReadSupported() throws IOException {
         Document doc = Jsoup.connect(SlowRider.Url)
-            .timeout(0)
-            .data(SlowRider.MaxTimeParam, "2000")
-            .get();
+                .timeout(0)
+                .data(SlowRider.MaxTimeParam, "2000")
+                .get();
 
         Element h1 = doc.selectFirst("h1");
         assertEquals("outatime", h1.text());
@@ -289,12 +294,12 @@ public class ConnectTest {
         File html = ParseTest.getFile("/htmltests/google-ipod.html");
 
         Document res = Jsoup
-            .connect(EchoServlet.Url)
-            .data("firstname", "Jay")
-            .data("firstPart", thumb.getName(), new FileInputStream(thumb), "image/jpeg")
-            .data("secondPart", html.getName(), new FileInputStream(html)) // defaults to "application-octetstream";
-            .data("surname", "Soup")
-            .post();
+                .connect(EchoServlet.Url)
+                .data("firstname", "Jay")
+                .data("firstPart", thumb.getName(), new FileInputStream(thumb), "image/jpeg")
+                .data("secondPart", html.getName(), new FileInputStream(html)) // defaults to "application-octetstream";
+                .data("surname", "Soup")
+                .post();
 
         assertEquals("4", ihVal("Parts", res));
 
@@ -323,7 +328,8 @@ public class ConnectTest {
          */
     }
 
-    @Test public void multipleParsesOkAfterBufferUp() throws IOException {
+    @Test
+    public void multipleParsesOkAfterBufferUp() throws IOException {
         Connection.Response res = Jsoup.connect(echoUrl).execute().bufferUp();
 
         Document doc = res.parse();
@@ -333,13 +339,15 @@ public class ConnectTest {
         assertTrue(doc2.title().contains("Environment"));
     }
 
-    @Test(expected=IllegalArgumentException.class) public void bodyAfterParseThrowsValidationError() throws IOException {
+    @Test(expected = IllegalArgumentException.class)
+    public void bodyAfterParseThrowsValidationError() throws IOException {
         Connection.Response res = Jsoup.connect(echoUrl).execute();
         Document doc = res.parse();
         String body = res.body();
     }
 
-    @Test public void bodyAndBytesAvailableBeforeParse() throws IOException {
+    @Test
+    public void bodyAndBytesAvailableBeforeParse() throws IOException {
         Connection.Response res = Jsoup.connect(echoUrl).execute();
         String body = res.body();
         assertTrue(body.contains("Environment"));
@@ -350,7 +358,8 @@ public class ConnectTest {
         assertTrue(doc.title().contains("Environment"));
     }
 
-    @Test(expected=IllegalArgumentException.class) public void parseParseThrowsValidates() throws IOException {
+    @Test(expected = IllegalArgumentException.class)
+    public void parseParseThrowsValidates() throws IOException {
         Connection.Response res = Jsoup.connect(echoUrl).execute();
         Document doc = res.parse();
         assertTrue(doc.title().contains("Environment"));
@@ -387,8 +396,8 @@ public class ConnectTest {
         // this handles situations where the remote server sets a content length greater than it actually writes
 
         Connection.Response res = Jsoup.connect(InterruptedServlet.Url)
-            .timeout(200)
-            .execute();
+                .timeout(200)
+                .execute();
 
         boolean threw = false;
         try {
@@ -403,8 +412,8 @@ public class ConnectTest {
     @Test
     public void handlesEmtpyStreamDuringBufferdRead() throws IOException {
         Connection.Response res = Jsoup.connect(InterruptedServlet.Url)
-            .timeout(200)
-            .execute();
+                .timeout(200)
+                .execute();
 
         boolean threw = false;
         try {
@@ -415,10 +424,11 @@ public class ConnectTest {
         assertTrue(threw);
     }
 
-    @Test public void handlesRedirect() throws IOException {
+    @Test
+    public void handlesRedirect() throws IOException {
         Document doc = Jsoup.connect(RedirectServlet.Url)
-            .data(RedirectServlet.LocationParam, HelloServlet.Url)
-            .get();
+                .data(RedirectServlet.LocationParam, HelloServlet.Url)
+                .get();
 
         Element p = doc.selectFirst("p");
         assertEquals("Hello, World!", p.text());
@@ -426,11 +436,12 @@ public class ConnectTest {
         assertEquals(HelloServlet.Url, doc.location());
     }
 
-    @Test public void handlesEmptyRedirect() throws IOException {
+    @Test
+    public void handlesEmptyRedirect() throws IOException {
         boolean threw = false;
         try {
             Connection.Response res = Jsoup.connect(RedirectServlet.Url)
-                .execute();
+                    .execute();
         } catch (IOException e) {
             assertTrue(e.getMessage().contains("Too many redirects"));
             threw = true;
@@ -438,23 +449,25 @@ public class ConnectTest {
         assertTrue(threw);
     }
 
-    @Test public void doesNotPostFor302() throws IOException {
+    @Test
+    public void doesNotPostFor302() throws IOException {
         final Document doc = Jsoup.connect(RedirectServlet.Url)
-            .data("Hello", "there")
-            .data(RedirectServlet.LocationParam, EchoServlet.Url)
-            .post();
+                .data("Hello", "there")
+                .data(RedirectServlet.LocationParam, EchoServlet.Url)
+                .post();
 
         assertEquals(EchoServlet.Url, doc.location());
         assertEquals("GET", ihVal("Method", doc));
         assertNull(ihVal("Hello", doc)); // data not sent
     }
 
-    @Test public void doesPostFor307() throws IOException {
+    @Test
+    public void doesPostFor307() throws IOException {
         final Document doc = Jsoup.connect(RedirectServlet.Url)
-            .data("Hello", "there")
-            .data(RedirectServlet.LocationParam, EchoServlet.Url)
-            .data(RedirectServlet.CodeParam, "307")
-            .post();
+                .data("Hello", "there")
+                .data(RedirectServlet.LocationParam, EchoServlet.Url)
+                .data(RedirectServlet.CodeParam, "307")
+                .post();
 
         assertEquals(EchoServlet.Url, doc.location());
         assertEquals("POST", ihVal("Method", doc));

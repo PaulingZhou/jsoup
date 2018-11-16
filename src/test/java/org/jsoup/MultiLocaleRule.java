@@ -9,10 +9,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Locale;
 
 public class MultiLocaleRule implements TestRule {
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface MultiLocaleTest {
-    }
-
     public Statement apply(final Statement statement, final Description description) {
         return new Statement() {
             @Override
@@ -37,5 +33,9 @@ public class MultiLocaleRule implements TestRule {
                 }
             }
         };
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface MultiLocaleTest {
     }
 }

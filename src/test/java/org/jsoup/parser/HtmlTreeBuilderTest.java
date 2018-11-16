@@ -10,13 +10,13 @@ public class HtmlTreeBuilderTest {
     @Test
     public void ensureSearchArraysAreSorted() {
         String[][] arrays = {
-            HtmlTreeBuilder.TagsSearchInScope,
-            HtmlTreeBuilder.TagSearchList,
-            HtmlTreeBuilder.TagSearchButton,
-            HtmlTreeBuilder.TagSearchTableScope,
-            HtmlTreeBuilder.TagSearchSelectScope,
-            HtmlTreeBuilder.TagSearchEndTags,
-            HtmlTreeBuilder.TagSearchSpecial
+                HtmlTreeBuilder.TagsSearchInScope,
+                HtmlTreeBuilder.TagSearchList,
+                HtmlTreeBuilder.TagSearchButton,
+                HtmlTreeBuilder.TagSearchTableScope,
+                HtmlTreeBuilder.TagSearchSelectScope,
+                HtmlTreeBuilder.TagSearchEndTags,
+                HtmlTreeBuilder.TagSearchSpecial
         };
 
         for (String[] array : arrays) {

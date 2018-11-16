@@ -15,13 +15,17 @@ import java.util.Stack;
 public final class StringUtil {
     // memoised padding up to 21
     static final String[] padding = {"", " ", "  ", "   ", "    ", "     ", "      ", "       ", "        ",
-        "         ", "          ", "           ", "            ", "             ", "              ", "               ",
-        "                ", "                 ", "                  ", "                   ", "                    "};
+            "         ", "          ", "           ", "            ", "             ", "              ", "               ",
+            "                ", "                 ", "                  ", "                   ", "                    "};
+    private static final Stack<StringBuilder> builders = new Stack<>();
+    private static final int MaxCachedBuilderSize = 8 * 1024;
+    private static final int MaxIdleBuilders = 8;
 
     /**
      * Join a collection of strings by a separator
+     *
      * @param strings collection of string objects
-     * @param sep string to place between strings
+     * @param sep     string to place between strings
      * @return joined string
      */
     public static String join(Collection strings, String sep) {
@@ -30,8 +34,9 @@ public final class StringUtil {
 
     /**
      * Join a collection of strings by a separator
+     *
      * @param strings iterator of string objects
-     * @param sep string to place between strings
+     * @param sep     string to place between strings
      * @return joined string
      */
     public static String join(Iterator strings, String sep) {
@@ -52,8 +57,9 @@ public final class StringUtil {
 
     /**
      * Join an array of strings by a separator
+     *
      * @param strings collection of string objects
-     * @param sep string to place between strings
+     * @param sep     string to place between strings
      * @return joined string
      */
     public static String join(String[] strings, String sep) {
@@ -62,6 +68,7 @@ public final class StringUtil {
 
     /**
      * Returns space padding
+     *
      * @param width amount of padding desired
      * @return string of spaces * width
      */
@@ -79,6 +86,7 @@ public final class StringUtil {
 
     /**
      * Tests if a string is blank: null, empty, or only whitespace (" ", \r\n, \t, etc)
+     *
      * @param string string to test
      * @return if string is blank
      */
@@ -96,6 +104,7 @@ public final class StringUtil {
 
     /**
      * Tests if a string is numeric, i.e. contains only digit characters
+     *
      * @param string string to test
      * @return true if only digit chars, false if empty or null or contains non-digit chars
      */
@@ -113,20 +122,22 @@ public final class StringUtil {
 
     /**
      * Tests if a code point is "whitespace" as defined in the HTML spec. Used for output HTML.
+     *
      * @param c code point to test
      * @return true if code point is whitespace, false otherwise
      * @see #isActuallyWhitespace(int)
      */
-    public static boolean isWhitespace(int c){
+    public static boolean isWhitespace(int c) {
         return c == ' ' || c == '\t' || c == '\n' || c == '\f' || c == '\r';
     }
 
     /**
      * Tests if a code point is "whitespace" as defined by what it looks like. Used for Element.text etc.
+     *
      * @param c code point to test
      * @return true if code point is whitespace, false otherwise
      */
-    public static boolean isActuallyWhitespace(int c){
+    public static boolean isActuallyWhitespace(int c) {
         return c == ' ' || c == '\t' || c == '\n' || c == '\f' || c == '\r' || c == 160;
         // 160 is &nbsp; (non-breaking space). Not in the spec but expected.
     }
@@ -139,6 +150,7 @@ public final class StringUtil {
     /**
      * Normalise the whitespace within this string; multiple spaces collapse to a single, and all whitespace characters
      * (e.g. newline, tab) convert to a simple space
+     *
      * @param string content to normalise
      * @return normalised string
      */
@@ -150,8 +162,9 @@ public final class StringUtil {
 
     /**
      * After normalizing the whitespace within a string, appends it to a string builder.
-     * @param accum builder to append to
-     * @param string string to normalize whitespace within
+     *
+     * @param accum        builder to append to
+     * @param string       string to normalize whitespace within
      * @param stripLeading set to true if you wish to remove any leading whitespace
      */
     public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading) {
@@ -160,15 +173,14 @@ public final class StringUtil {
 
         int len = string.length();
         int c;
-        for (int i = 0; i < len; i+= Character.charCount(c)) {
+        for (int i = 0; i < len; i += Character.charCount(c)) {
             c = string.codePointAt(i);
             if (isActuallyWhitespace(c)) {
                 if ((stripLeading && !reachedNonWhite) || lastWasWhite)
                     continue;
                 accum.append(' ');
                 lastWasWhite = true;
-            }
-            else if (!isInvisibleChar(c)) {
+            } else if (!isInvisibleChar(c)) {
                 accum.appendCodePoint(c);
                 lastWasWhite = false;
                 reachedNonWhite = true;
@@ -180,7 +192,7 @@ public final class StringUtil {
         final int len = haystack.length;
         for (int i = 0; i < len; i++) {
             if (haystack[i].equals(needle))
-            return true;
+                return true;
         }
         return false;
     }
@@ -191,7 +203,8 @@ public final class StringUtil {
 
     /**
      * Create a new absolute URL, from a provided existing absolute URL and a relative URL component.
-     * @param base the existing absolute base URL
+     *
+     * @param base   the existing absolute base URL
      * @param relUrl the relative URL to resolve. (If it's already absolute, it will be returned)
      * @return the resolved absolute URL
      * @throws MalformedURLException if an error occurred generating the URL
@@ -209,8 +222,9 @@ public final class StringUtil {
 
     /**
      * Create a new absolute URL, from a provided existing absolute URL and a relative URL component.
+     *
      * @param baseUrl the existing absolute base URL
-     * @param relUrl the relative URL to resolve. (If it's already absolute, it will be returned)
+     * @param relUrl  the relative URL to resolve. (If it's already absolute, it will be returned)
      * @return an absolute URL if one was able to be generated, or the empty string if not
      */
     public static String resolve(final String baseUrl, final String relUrl) {
@@ -229,27 +243,27 @@ public final class StringUtil {
         }
     }
 
-    private static final Stack<StringBuilder> builders = new Stack<>();
-
     /**
      * Maintains cached StringBuilders in a flyweight pattern, to minimize new StringBuilder GCs. The StringBuilder is
      * prevented from growing too large.
      * <p>
      * Care must be taken to release the builder once its work has been completed, with {@see #releaseBuilder}
+     *
      * @return an empty StringBuilder
      * @
      */
     public static StringBuilder borrowBuilder() {
         synchronized (builders) {
             return builders.empty() ?
-                new StringBuilder(MaxCachedBuilderSize) :
-                builders.pop();
+                    new StringBuilder(MaxCachedBuilderSize) :
+                    builders.pop();
         }
     }
 
     /**
      * Release a borrowed builder. Care must be taken not to use the builder after it has been returned, as its
      * contents may be changed by this method, or by a concurrent thread.
+     *
      * @param sb the StringBuilder to release.
      * @return the string value of the released String Builder (as an incentive to release it!).
      */
@@ -271,7 +285,4 @@ public final class StringUtil {
         }
         return string;
     }
-
-    private static final int MaxCachedBuilderSize = 8 * 1024;
-    private static final int MaxIdleBuilders = 8;
 }

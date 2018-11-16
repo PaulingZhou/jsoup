@@ -27,7 +27,8 @@ public class ParseSettings {
 
     /**
      * Define parse settings.
-     * @param tag preserve tag case?
+     *
+     * @param tag       preserve tag case?
      * @param attribute preserve attribute name case?
      */
     public ParseSettings(boolean tag, boolean attribute) {

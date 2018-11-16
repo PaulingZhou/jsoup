@@ -34,15 +34,16 @@ public final class ConstrainableInputStream extends BufferedInputStream {
 
     /**
      * If this InputStream is not already a ConstrainableInputStream, let it be one.
-     * @param in the input stream to (maybe) wrap
+     *
+     * @param in         the input stream to (maybe) wrap
      * @param bufferSize the buffer size to use when reading
-     * @param maxSize the maximum size to allow to be read. 0 == infinite.
+     * @param maxSize    the maximum size to allow to be read. 0 == infinite.
      * @return a constrainable input stream
      */
     public static ConstrainableInputStream wrap(InputStream in, int bufferSize, int maxSize) {
         return in instanceof ConstrainableInputStream
-            ? (ConstrainableInputStream) in
-            : new ConstrainableInputStream(in, bufferSize, maxSize);
+                ? (ConstrainableInputStream) in
+                : new ConstrainableInputStream(in, bufferSize, maxSize);
     }
 
     @Override

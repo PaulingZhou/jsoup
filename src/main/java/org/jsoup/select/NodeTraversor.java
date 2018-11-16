@@ -16,6 +16,7 @@ public class NodeTraversor {
 
     /**
      * Create a new traversor.
+     *
      * @param visitor a class implementing the {@link NodeVisitor} interface, to be called when visiting each node.
      * @deprecated Just use the static {@link NodeTraversor#filter(NodeFilter, Node)} method.
      */
@@ -25,22 +26,14 @@ public class NodeTraversor {
 
     /**
      * Start a depth-first traverse of the root and all of its descendants.
-     * @param root the root node point to traverse.
-     * @deprecated Just use the static {@link NodeTraversor#filter(NodeFilter, Node)} method.
-     */
-    public void traverse(Node root) {
-        traverse(visitor, root);
-    }
-
-    /**
-     * Start a depth-first traverse of the root and all of its descendants.
+     *
      * @param visitor Node visitor.
-     * @param root the root node point to traverse.
+     * @param root    the root node point to traverse.
      */
     public static void traverse(NodeVisitor visitor, Node root) {
         Node node = root;
         int depth = 0;
-        
+
         while (node != null) {
             visitor.head(node, depth);
             if (node.childNodeSize() > 0) {
@@ -62,7 +55,8 @@ public class NodeTraversor {
 
     /**
      * Start a depth-first traverse of all elements.
-     * @param visitor Node visitor.
+     *
+     * @param visitor  Node visitor.
      * @param elements Elements to filter.
      */
     public static void traverse(NodeVisitor visitor, Elements elements) {
@@ -74,8 +68,9 @@ public class NodeTraversor {
 
     /**
      * Start a depth-first filtering of the root and all of its descendants.
+     *
      * @param filter Node visitor.
-     * @param root the root node point to traverse.
+     * @param root   the root node point to traverse.
      * @return The filter result of the root node, or {@link FilterResult#STOP}.
      */
     public static FilterResult filter(NodeFilter filter, Node root) {
@@ -126,7 +121,8 @@ public class NodeTraversor {
 
     /**
      * Start a depth-first filtering of all elements.
-     * @param filter Node filter.
+     *
+     * @param filter   Node filter.
      * @param elements Elements to filter.
      */
     public static void filter(NodeFilter filter, Elements elements) {
@@ -135,5 +131,15 @@ public class NodeTraversor {
         for (Element el : elements)
             if (filter(filter, el) == FilterResult.STOP)
                 break;
+    }
+
+    /**
+     * Start a depth-first traverse of the root and all of its descendants.
+     *
+     * @param root the root node point to traverse.
+     * @deprecated Just use the static {@link NodeTraversor#filter(NodeFilter, Node)} method.
+     */
+    public void traverse(Node root) {
+        traverse(visitor, root);
     }
 }

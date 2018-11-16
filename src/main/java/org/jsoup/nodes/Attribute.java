@@ -1,31 +1,31 @@
 package org.jsoup.nodes;
 
 import org.jsoup.SerializationException;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
 /**
- A single key + value attribute. (Only used for presentation.)
+ * A single key + value attribute. (Only used for presentation.)
  */
-public class Attribute implements Map.Entry<String, String>, Cloneable  {
+public class Attribute implements Map.Entry<String, String>, Cloneable {
     private static final String[] booleanAttributes = {
             "allowfullscreen", "async", "autofocus", "checked", "compact", "declare", "default", "defer", "disabled",
             "formnovalidate", "hidden", "inert", "ismap", "itemscope", "multiple", "muted", "nohref", "noresize",
             "noshade", "novalidate", "nowrap", "open", "readonly", "required", "reversed", "seamless", "selected",
             "sortable", "truespeed", "typemustmatch"
     };
-
+    Attributes parent; // used to update the holding Attributes when the key / value is changed via this interface
     private String key;
     private String val;
-    Attributes parent; // used to update the holding Attributes when the key / value is changed via this interface
 
     /**
      * Create a new attribute from unencoded (raw) key and value.
-     * @param key attribute key; case is preserved.
+     *
+     * @param key   attribute key; case is preserved.
      * @param value attribute value
      * @see #createFromEncoded
      */
@@ -35,10 +35,12 @@ public class Attribute implements Map.Entry<String, String>, Cloneable  {
 
     /**
      * Create a new attribute from unencoded (raw) key and value.
-     * @param key attribute key; case is preserved.
-     * @param val attribute value
+     *
+     * @param key    attribute key; case is preserved.
+     * @param val    attribute value
      * @param parent the containing Attributes (this Attribute is not automatically added to said Attributes)
-     * @see #createFromEncoded*/
+     * @see #createFromEncoded
+     */
     public Attribute(String key, String val, Attributes parent) {
         Validate.notNull(key);
         this.key = key.trim();
@@ -47,17 +49,57 @@ public class Attribute implements Map.Entry<String, String>, Cloneable  {
         this.parent = parent;
     }
 
+    protected static void html(String key, String val, Appendable accum, Document.OutputSettings out) throws IOException {
+        accum.append(key);
+        if (!shouldCollapseAttribute(key, val, out)) {
+            accum.append("=\"");
+            Entities.escape(accum, Attributes.checkNotNull(val), out, true, false, false);
+            accum.append('"');
+        }
+    }
+
     /**
-     Get the attribute key.
-     @return the attribute key
+     * Create a new Attribute from an unencoded key and a HTML attribute encoded value.
+     *
+     * @param unencodedKey assumes the key is not encoded, as can be only run of simple \w chars.
+     * @param encodedValue HTML attribute encoded value
+     * @return attribute
+     */
+    public static Attribute createFromEncoded(String unencodedKey, String encodedValue) {
+        String value = Entities.unescape(encodedValue, true);
+        return new Attribute(unencodedKey, value, null); // parent will get set when Put
+    }
+
+    protected static boolean isDataAttribute(String key) {
+        return key.startsWith(Attributes.dataPrefix) && key.length() > Attributes.dataPrefix.length();
+    }
+
+    protected static boolean shouldCollapseAttribute(final String key, final String val, final Document.OutputSettings out) {
+        return (
+                out.syntax() == Document.OutputSettings.Syntax.html &&
+                        (val == null || ("".equals(val) || val.equalsIgnoreCase(key)) && Attribute.isBooleanAttribute(key)));
+    }
+
+    /**
+     * Checks if this attribute name is defined as a boolean attribute in HTML5
+     */
+    protected static boolean isBooleanAttribute(final String key) {
+        return Arrays.binarySearch(booleanAttributes, key) >= 0;
+    }
+
+    /**
+     * Get the attribute key.
+     *
+     * @return the attribute key
      */
     public String getKey() {
         return key;
     }
 
     /**
-     Set the attribute key; case is preserved.
-     @param key the new key; must not be null
+     * Set the attribute key; case is preserved.
+     *
+     * @param key the new key; must not be null
      */
     public void setKey(String key) {
         Validate.notNull(key);
@@ -72,16 +114,18 @@ public class Attribute implements Map.Entry<String, String>, Cloneable  {
     }
 
     /**
-     Get the attribute value.
-     @return the attribute value
+     * Get the attribute value.
+     *
+     * @return the attribute value
      */
     public String getValue() {
         return val;
     }
 
     /**
-     Set the attribute value.
-     @param val the new attribute value; must not be null
+     * Set the attribute value.
+     *
+     * @param val the new attribute value; must not be null
      */
     public String setValue(String val) {
         String oldVal = parent.get(this.key);
@@ -95,75 +139,47 @@ public class Attribute implements Map.Entry<String, String>, Cloneable  {
     }
 
     /**
-     Get the HTML representation of this attribute; e.g. {@code href="index.html"}.
-     @return HTML
+     * Get the HTML representation of this attribute; e.g. {@code href="index.html"}.
+     *
+     * @return HTML
      */
     public String html() {
         StringBuilder sb = StringUtil.borrowBuilder();
-        
+
         try {
-        	html(sb, (new Document("")).outputSettings());
-        } catch(IOException exception) {
-        	throw new SerializationException(exception);
+            html(sb, (new Document("")).outputSettings());
+        } catch (IOException exception) {
+            throw new SerializationException(exception);
         }
         return StringUtil.releaseBuilder(sb);
     }
 
-    protected static void html(String key, String val, Appendable accum, Document.OutputSettings out) throws IOException {
-        accum.append(key);
-        if (!shouldCollapseAttribute(key, val, out)) {
-            accum.append("=\"");
-            Entities.escape(accum, Attributes.checkNotNull(val) , out, true, false, false);
-            accum.append('"');
-        }
-    }
-    
     protected void html(Appendable accum, Document.OutputSettings out) throws IOException {
         html(key, val, accum, out);
     }
 
     /**
-     Get the string representation of this attribute, implemented as {@link #html()}.
-     @return string
+     * Get the string representation of this attribute, implemented as {@link #html()}.
+     *
+     * @return string
      */
     @Override
     public String toString() {
         return html();
     }
 
-    /**
-     * Create a new Attribute from an unencoded key and a HTML attribute encoded value.
-     * @param unencodedKey assumes the key is not encoded, as can be only run of simple \w chars.
-     * @param encodedValue HTML attribute encoded value
-     * @return attribute
-     */
-    public static Attribute createFromEncoded(String unencodedKey, String encodedValue) {
-        String value = Entities.unescape(encodedValue, true);
-        return new Attribute(unencodedKey, value, null); // parent will get set when Put
-    }
-
     protected boolean isDataAttribute() {
         return isDataAttribute(key);
     }
 
-    protected static boolean isDataAttribute(String key) {
-        return key.startsWith(Attributes.dataPrefix) && key.length() > Attributes.dataPrefix.length();
-    }
-
     /**
      * Collapsible if it's a boolean attribute and value is empty or same as name
-     * 
+     *
      * @param out output settings
-     * @return  Returns whether collapsible or not
+     * @return Returns whether collapsible or not
      */
     protected final boolean shouldCollapseAttribute(Document.OutputSettings out) {
         return shouldCollapseAttribute(key, val, out);
-    }
-
-    protected static boolean shouldCollapseAttribute(final String key, final String val, final Document.OutputSettings out) {
-        return (
-            out.syntax() == Document.OutputSettings.Syntax.html &&
-                (val == null || ("".equals(val) || val.equalsIgnoreCase(key)) && Attribute.isBooleanAttribute(key)));
     }
 
     /**
@@ -171,13 +187,6 @@ public class Attribute implements Map.Entry<String, String>, Cloneable  {
      */
     protected boolean isBooleanAttribute() {
         return Arrays.binarySearch(booleanAttributes, key) >= 0 || val == null;
-    }
-
-    /**
-     * Checks if this attribute name is defined as a boolean attribute in HTML5
-     */
-    protected static boolean isBooleanAttribute(final String key) {
-        return Arrays.binarySearch(booleanAttributes, key) >= 0;
     }
 
     @Override

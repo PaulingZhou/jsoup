@@ -9,9 +9,12 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class ParserSettingsTest {
-    @Rule public MultiLocaleRule rule = new MultiLocaleRule();
+    @Rule
+    public MultiLocaleRule rule = new MultiLocaleRule();
 
-    @Test @MultiLocaleTest public void caseSupport() {
+    @Test
+    @MultiLocaleTest
+    public void caseSupport() {
         ParseSettings bothOn = new ParseSettings(true, true);
         ParseSettings bothOff = new ParseSettings(false, false);
         ParseSettings tagOn = new ParseSettings(true, false);
@@ -30,7 +33,9 @@ public class ParserSettingsTest {
         assertEquals("ID", attrOn.normalizeAttribute("ID"));
     }
 
-    @Test @MultiLocaleTest public void attributeCaseNormalization() throws Exception {
+    @Test
+    @MultiLocaleTest
+    public void attributeCaseNormalization() throws Exception {
         ParseSettings parseSettings = new ParseSettings(false, false);
 
         String normalizedAttribute = parseSettings.normalizeAttribute("HIDDEN");
@@ -38,7 +43,9 @@ public class ParserSettingsTest {
         assertEquals("hidden", normalizedAttribute);
     }
 
-    @Test @MultiLocaleTest public void attributesCaseNormalization() throws Exception {
+    @Test
+    @MultiLocaleTest
+    public void attributesCaseNormalization() throws Exception {
         ParseSettings parseSettings = new ParseSettings(false, false);
         Attributes attributes = new Attributes();
         attributes.put("ITEM", "1");

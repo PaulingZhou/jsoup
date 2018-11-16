@@ -15,16 +15,16 @@ import java.util.List;
  */
 abstract class TreeBuilder {
     protected Parser parser;
-    CharacterReader reader;
-    Tokeniser tokeniser;
     protected Document doc; // current doc we are building into
     protected ArrayList<Element> stack; // the stack of open elements
     protected String baseUri; // current base uri, for creating new elements
     protected Token currentToken; // currentToken is used only for error tracking.
     protected ParseSettings settings;
-
+    CharacterReader reader;
+    Tokeniser tokeniser;
     private Token.StartTag start = new Token.StartTag(); // start tag to process
-    private Token.EndTag end  = new Token.EndTag();
+    private Token.EndTag end = new Token.EndTag();
+
     abstract ParseSettings defaultSettings();
 
     protected void initialiseParse(Reader input, String baseUri, Parser parser) {
@@ -89,6 +89,6 @@ abstract class TreeBuilder {
 
     protected Element currentElement() {
         int size = stack.size();
-        return size > 0 ? stack.get(size-1) : null;
+        return size > 0 ? stack.get(size - 1) : null;
     }
 }

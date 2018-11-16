@@ -241,8 +241,7 @@ enum TokeniserState {
                     if (t.isAppropriateEndTagToken()) {
                         t.emitTagPending();
                         t.transition(Data);
-                    }
-                    else
+                    } else
                         anythingElse(t, r);
                     break;
                 default:
@@ -547,7 +546,7 @@ enum TokeniserState {
     },
     ScriptDataDoubleEscapeEnd {
         void read(Tokeniser t, CharacterReader r) {
-            handleDataDoubleEscapeTag(t,r, ScriptDataEscaped, ScriptDataDoubleEscaped);
+            handleDataDoubleEscapeTag(t, r, ScriptDataEscaped, ScriptDataDoubleEscaped);
         }
     },
     BeforeAttributeName {
@@ -1617,15 +1616,12 @@ enum TokeniserState {
     };
 
 
-    abstract void read(Tokeniser t, CharacterReader r);
-
     static final char nullChar = '\u0000';
     // char searches. must be sorted, used in inSorted. MUST update TokenisetStateTest if more arrays are added.
     static final char[] attributeSingleValueCharsSorted = new char[]{nullChar, '&', '\''};
     static final char[] attributeDoubleValueCharsSorted = new char[]{nullChar, '"', '&'};
     static final char[] attributeNameCharsSorted = new char[]{nullChar, '\t', '\n', '\f', '\r', ' ', '"', '\'', '/', '<', '=', '>'};
     static final char[] attributeValueUnquoted = new char[]{nullChar, '\t', '\n', '\f', '\r', ' ', '"', '&', '\'', '<', '=', '>', '`'};
-
     private static final char replacementChar = Tokeniser.replacementChar;
     private static final String replacementStr = String.valueOf(Tokeniser.replacementChar);
     private static final char eof = CharacterReader.EOF;
@@ -1741,4 +1737,6 @@ enum TokeniserState {
                 t.transition(fallback);
         }
     }
+
+    abstract void read(Tokeniser t, CharacterReader r);
 }

@@ -29,24 +29,25 @@ import java.util.regex.Pattern;
 
 /**
  * Internal static utilities for handling data.
- *
  */
 public final class DataUtil {
-    private static final Pattern charsetPattern = Pattern.compile("(?i)\\bcharset=\\s*(?:[\"'])?([^\\s,;\"']*)");
     static final String defaultCharset = "UTF-8"; // used if not found in header or meta charset
-    private static final int firstReadBufferSize = 1024 * 5;
     static final int bufferSize = 1024 * 32;
+    static final int boundaryLength = 32;
+    private static final Pattern charsetPattern = Pattern.compile("(?i)\\bcharset=\\s*(?:[\"'])?([^\\s,;\"']*)");
+    private static final int firstReadBufferSize = 1024 * 5;
     private static final char[] mimeBoundaryChars =
             "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
-    static final int boundaryLength = 32;
 
-    private DataUtil() {}
+    private DataUtil() {
+    }
 
     /**
      * Loads a file to a Document.
-     * @param in file to load
+     *
+     * @param in          file to load
      * @param charsetName character set of input
-     * @param baseUri base URI of document, to resolve relative links against
+     * @param baseUri     base URI of document, to resolve relative links against
      * @return Document
      * @throws IOException on IO error
      */
@@ -56,9 +57,10 @@ public final class DataUtil {
 
     /**
      * Parses a Document from an input steam.
-     * @param in input stream to parse. You will need to close it.
+     *
+     * @param in          input stream to parse. You will need to close it.
      * @param charsetName character set of input
-     * @param baseUri base URI of document, to resolve relative links against
+     * @param baseUri     base URI of document, to resolve relative links against
      * @return Document
      * @throws IOException on IO error
      */
@@ -68,10 +70,11 @@ public final class DataUtil {
 
     /**
      * Parses a Document from an input steam, using the provided Parser.
-     * @param in input stream to parse. You will need to close it.
+     *
+     * @param in          input stream to parse. You will need to close it.
      * @param charsetName character set of input
-     * @param baseUri base URI of document, to resolve relative links against
-     * @param parser alternate {@link Parser#xmlParser() parser} to use.
+     * @param baseUri     base URI of document, to resolve relative links against
+     * @param parser      alternate {@link Parser#xmlParser() parser} to use.
      * @return Document
      * @throws IOException on IO error
      */
@@ -81,7 +84,8 @@ public final class DataUtil {
 
     /**
      * Writes the input stream to the output stream. Doesn't close them.
-     * @param in input stream to read from
+     *
+     * @param in  input stream to read from
      * @param out output stream to write to
      * @throws IOException on IO error
      */
@@ -93,7 +97,7 @@ public final class DataUtil {
         }
     }
 
-    static Document parseInputStream(InputStream input, String charsetName, String baseUri, Parser parser) throws IOException  {
+    static Document parseInputStream(InputStream input, String charsetName, String baseUri, Parser parser) throws IOException {
         if (input == null) // empty body
             return new Document(baseUri);
         input = ConstrainableInputStream.wrap(input, bufferSize, 0);
@@ -181,8 +185,9 @@ public final class DataUtil {
     /**
      * Read the input stream into a byte buffer. To deal with slow input streams, you may interrupt the thread this
      * method is executing on. The data read until being interrupted will be available.
+     *
      * @param inStream the input stream to read from
-     * @param maxSize the maximum size in bytes to read from the stream. Set to 0 to be unlimited.
+     * @param maxSize  the maximum size in bytes to read from the stream. Set to 0 to be unlimited.
      * @return the filled byte buffer
      * @throws IOException if an exception occurs whilst reading from the input stream.
      */
@@ -199,6 +204,7 @@ public final class DataUtil {
     /**
      * Parse out a charset from a content type header. If the charset is not supported, returns null (so the default
      * will kick in.)
+     *
      * @param contentType e.g. "text/html; charset=EUC-JP"
      * @return "EUC-JP", or null if not found. Charset is trimmed and uppercased.
      */
@@ -247,10 +253,10 @@ public final class DataUtil {
             buffer.rewind();
         }
         if (bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == (byte) 0xFE && bom[3] == (byte) 0xFF || // BE
-            bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE && bom[2] == 0x00 && bom[3] == 0x00) { // LE
+                bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE && bom[2] == 0x00 && bom[3] == 0x00) { // LE
             return new BomCharset("UTF-32", false); // and I hope it's on your system
         } else if (bom[0] == (byte) 0xFE && bom[1] == (byte) 0xFF || // BE
-            bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE) {
+                bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE) {
             return new BomCharset("UTF-16", false); // in all Javas
         } else if (bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF) {
             return new BomCharset("UTF-8", true); // in all Javas

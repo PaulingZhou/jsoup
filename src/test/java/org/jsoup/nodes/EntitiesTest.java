@@ -4,11 +4,14 @@ import org.jsoup.Jsoup;
 import org.junit.Test;
 
 import static org.jsoup.nodes.Document.OutputSettings;
-import static org.jsoup.nodes.Entities.EscapeMode.*;
-import static org.junit.Assert.*;
+import static org.jsoup.nodes.Entities.EscapeMode.base;
+import static org.jsoup.nodes.Entities.EscapeMode.extended;
+import static org.jsoup.nodes.Entities.EscapeMode.xhtml;
+import static org.junit.Assert.assertEquals;
 
 public class EntitiesTest {
-    @Test public void escape() {
+    @Test
+    public void escape() {
         String text = "Hello &<> Å å π 新 there ¾ © »";
         String escapedAscii = Entities.escape(text, new OutputSettings().charset("ascii").escapeMode(base));
         String escapedAsciiFull = Entities.escape(text, new OutputSettings().charset("ascii").escapeMode(extended));
@@ -31,17 +34,19 @@ public class EntitiesTest {
         assertEquals(text, Entities.unescape(escapedUtfMin));
     }
 
-    @Test public void escapedSupplemtary() {
+    @Test
+    public void escapedSupplemtary() {
         String text = "\uD835\uDD59";
         String escapedAscii = Entities.escape(text, new OutputSettings().charset("ascii").escapeMode(base));
         assertEquals("&#x1d559;", escapedAscii);
         String escapedAsciiFull = Entities.escape(text, new OutputSettings().charset("ascii").escapeMode(extended));
         assertEquals("&hopf;", escapedAsciiFull);
-        String escapedUtf= Entities.escape(text, new OutputSettings().charset("UTF-8").escapeMode(extended));
+        String escapedUtf = Entities.escape(text, new OutputSettings().charset("UTF-8").escapeMode(extended));
         assertEquals(text, escapedUtf);
     }
 
-    @Test public void unescapeMultiChars() {
+    @Test
+    public void unescapeMultiChars() {
         String text = "&NestedGreaterGreater; &nGg; &nGt; &nGtv; &Gt; &gg;"; // gg is not combo, but 8811 could conflict with NestedGreaterGreater or others
         String un = "≫ ⋙̸ ≫⃒ ≫̸ ≫ ≫";
         assertEquals(un, Entities.unescape(text));
@@ -50,7 +55,8 @@ public class EntitiesTest {
         assertEquals(un, Entities.unescape(escaped));
     }
 
-    @Test public void xhtml() {
+    @Test
+    public void xhtml() {
         String text = "&amp; &gt; &lt; &quot;";
         assertEquals(38, xhtml.codepointForName("amp"));
         assertEquals(62, xhtml.codepointForName("gt"));
@@ -63,14 +69,16 @@ public class EntitiesTest {
         assertEquals("quot", xhtml.nameForCodepoint(34));
     }
 
-    @Test public void getByName() {
+    @Test
+    public void getByName() {
         assertEquals("≫⃒", Entities.getByName("nGt"));
         assertEquals("fj", Entities.getByName("fjlig"));
         assertEquals("≫", Entities.getByName("gg"));
         assertEquals("©", Entities.getByName("copy"));
     }
 
-    @Test public void escapeSupplementaryCharacter() {
+    @Test
+    public void escapeSupplementaryCharacter() {
         String text = new String(Character.toChars(135361));
         String escapedAscii = Entities.escape(text, new OutputSettings().charset("ascii").escapeMode(base));
         assertEquals("&#x210c1;", escapedAscii);
@@ -78,50 +86,57 @@ public class EntitiesTest {
         assertEquals(text, escapedUtf);
     }
 
-    @Test public void notMissingMultis() {
+    @Test
+    public void notMissingMultis() {
         String text = "&nparsl;";
         String un = "\u2AFD\u20E5";
         assertEquals(un, Entities.unescape(text));
     }
 
-    @Test public void notMissingSupplementals() {
+    @Test
+    public void notMissingSupplementals() {
         String text = "&npolint; &qfr;";
         String un = "⨔ \uD835\uDD2E"; // 𝔮
         assertEquals(un, Entities.unescape(text));
     }
 
-    @Test public void unescape() {
+    @Test
+    public void unescape() {
         String text = "Hello &AElig; &amp;&LT&gt; &reg &angst; &angst &#960; &#960 &#x65B0; there &! &frac34; &copy; &COPY;";
         assertEquals("Hello Æ &<> ® Å &angst π π 新 there &! ¾ © ©", Entities.unescape(text));
 
         assertEquals("&0987654321; &unknown", Entities.unescape("&0987654321; &unknown"));
     }
 
-    @Test public void strictUnescape() { // for attributes, enforce strict unescaping (must look like &#xxx; , not just &#xxx)
+    @Test
+    public void strictUnescape() { // for attributes, enforce strict unescaping (must look like &#xxx; , not just &#xxx)
         String text = "Hello &amp= &amp;";
         assertEquals("Hello &amp= &", Entities.unescape(text, true));
         assertEquals("Hello &= &", Entities.unescape(text));
         assertEquals("Hello &= &", Entities.unescape(text, false));
     }
 
-    
-    @Test public void caseSensitive() {
+
+    @Test
+    public void caseSensitive() {
         String unescaped = "Ü ü & &";
         assertEquals("&Uuml; &uuml; &amp; &amp;",
                 Entities.escape(unescaped, new OutputSettings().charset("ascii").escapeMode(extended)));
-        
+
         String escaped = "&Uuml; &uuml; &amp; &AMP";
         assertEquals("Ü ü & &", Entities.unescape(escaped));
     }
-    
-    @Test public void quoteReplacements() {
+
+    @Test
+    public void quoteReplacements() {
         String escaped = "&#92; &#36;";
         String unescaped = "\\ $";
-        
+
         assertEquals(unescaped, Entities.unescape(escaped));
     }
 
-    @Test public void letterDigitEntities() {
+    @Test
+    public void letterDigitEntities() {
         String html = "<p>&sup1;&sup2;&sup3;&frac14;&frac12;&frac34;</p>";
         Document doc = Jsoup.parse(html);
         doc.outputSettings().charset("ascii");
@@ -132,12 +147,14 @@ public class EntitiesTest {
         assertEquals("¹²³¼½¾", p.html());
     }
 
-    @Test public void noSpuriousDecodes() {
+    @Test
+    public void noSpuriousDecodes() {
         String string = "http://www.foo.com?a=1&num_rooms=1&children=0&int=VA&b=2";
         assertEquals(string, Entities.unescape(string));
     }
 
-    @Test public void escapesGtInXmlAttributesButNotInHtml() {
+    @Test
+    public void escapesGtInXmlAttributesButNotInHtml() {
         // https://github.com/jhy/jsoup/issues/528 - < is OK in HTML attribute values, but not in XML
 
 

@@ -30,6 +30,7 @@ public class FormElement extends Element {
 
     /**
      * Get the list of form control elements associated with this form.
+     *
      * @return form controls associated with this element.
      */
     public Elements elements() {
@@ -38,6 +39,7 @@ public class FormElement extends Element {
 
     /**
      * Add a form control element to this form.
+     *
      * @param element form control to add
      * @return this form element, for chaining
      */
@@ -55,9 +57,10 @@ public class FormElement extends Element {
     /**
      * Prepare to submit this form. A Connection object is created with the request set up from the form values. You
      * can then set up other options (like user-agent, timeout, cookies), then execute it.
+     *
      * @return a connection prepared from the values of this form.
      * @throws IllegalArgumentException if the form's absolute action URL cannot be determined. Make sure you pass the
-     * document's base URI when parsing.
+     *                                  document's base URI when parsing.
      */
     public Connection submit() {
         String action = hasAttr("action") ? absUrl("action") : baseUri();
@@ -73,13 +76,14 @@ public class FormElement extends Element {
     /**
      * Get the data that this form submits. The returned list is a copy of the data, and changes to the contents of the
      * list will not be reflected in the DOM.
+     *
      * @return a list of key vals
      */
     public List<Connection.KeyVal> formData() {
         ArrayList<Connection.KeyVal> data = new ArrayList<>();
 
         // iterate the form control elements and accumulate their values
-        for (Element el: elements) {
+        for (Element el : elements) {
             if (!el.tag().isFormSubmittable()) continue; // contents are form listable, superset of submitable
             if (el.hasAttr("disabled")) continue; // skip disabled form inputs
             String name = el.attr("name");
@@ -89,7 +93,7 @@ public class FormElement extends Element {
             if ("select".equals(el.tagName())) {
                 Elements options = el.select("option[selected]");
                 boolean set = false;
-                for (Element option: options) {
+                for (Element option : options) {
                     data.add(HttpConnection.KeyVal.create(name, option.val()));
                     set = true;
                 }
@@ -101,7 +105,7 @@ public class FormElement extends Element {
             } else if ("checkbox".equalsIgnoreCase(type) || "radio".equalsIgnoreCase(type)) {
                 // only add checkbox or radio if they have the checked attribute
                 if (el.hasAttr("checked")) {
-                    final String val = el.val().length() >  0 ? el.val() : "on";
+                    final String val = el.val().length() > 0 ? el.val() : "on";
                     data.add(HttpConnection.KeyVal.create(name, val));
                 }
             } else {

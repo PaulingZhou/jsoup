@@ -28,7 +28,7 @@ abstract class CombiningEvaluator extends Evaluator {
     Evaluator rightMostEvaluator() {
         return num > 0 ? evaluators.get(num - 1) : null;
     }
-    
+
     void replaceRightMostEvaluator(Evaluator replacement) {
         evaluators.set(num - 1, replacement);
     }
@@ -66,6 +66,7 @@ abstract class CombiningEvaluator extends Evaluator {
     static final class Or extends CombiningEvaluator {
         /**
          * Create a new Or evaluator. The initial evaluators are ANDed together and used as the first clause of the OR.
+         *
          * @param evaluators initial OR clause (these are wrapped into an AND evaluator).
          */
         Or(Collection<Evaluator> evaluators) {
@@ -77,7 +78,9 @@ abstract class CombiningEvaluator extends Evaluator {
             updateNumEvaluators();
         }
 
-        Or(Evaluator... evaluators) { this(Arrays.asList(evaluators)); }
+        Or(Evaluator... evaluators) {
+            this(Arrays.asList(evaluators));
+        }
 
         Or() {
             super();

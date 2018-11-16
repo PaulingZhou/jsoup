@@ -26,8 +26,8 @@ public class W3CDomTest {
         String out = TextUtil.stripNewlines(w3c.asString(wDoc));
         String expected = TextUtil.stripNewlines(
                 "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><title>W3c</title>" +
-                "</head><body><p class=\"one\" id=\"12\">Text</p><!-- comment --><invalid>What<script>alert('!')</script>" +
-                "</invalid></body></html>"
+                        "</head><body><p class=\"one\" id=\"12\">Text</p><!-- comment --><invalid>What<script>alert('!')</script>" +
+                        "</invalid></body></html>"
         );
         assertEquals(expected, out);
     }
@@ -47,8 +47,8 @@ public class W3CDomTest {
         String out = w3c.asString(wDoc);
         assertTrue(out.contains("ipod"));
     }
-    
-    
+
+
     @Test
     public void convertsGoogleLocation() throws IOException {
         File in = ParseTest.getFile("/htmltests/google-ipod.html");
@@ -58,10 +58,9 @@ public class W3CDomTest {
         Document wDoc = w3c.fromJsoup(doc);
 
         String out = w3c.asString(wDoc);
-        assertEquals(doc.location(), wDoc.getDocumentURI() );
+        assertEquals(doc.location(), wDoc.getDocumentURI());
     }
-    
-    
+
 
     @Test
     public void namespacePreservation() throws IOException {
@@ -137,7 +136,8 @@ public class W3CDomTest {
         Document w3Doc = new W3CDom().fromJsoup(jsoupDoc);
     }
 
-    @Test public void treatsUndeclaredNamespaceAsLocalName() {
+    @Test
+    public void treatsUndeclaredNamespaceAsLocalName() {
         String html = "<fb:like>One</fb:like>";
         org.jsoup.nodes.Document doc = Jsoup.parse(html);
 

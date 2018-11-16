@@ -12,8 +12,23 @@ import java.io.PrintWriter;
  */
 public class SlowRider extends BaseServlet {
     public static final String Url = TestServer.map(SlowRider.class);
-    private static final int SleepTime = 2000;
     public static final String MaxTimeParam = "maxTime";
+    private static final int SleepTime = 2000;
+
+    private static boolean pause(int sleepTime) {
+        try {
+            Thread.sleep(sleepTime);
+        } catch (InterruptedException e) {
+            return true;
+        }
+        return false;
+    }
+
+    // allow the servlet to run as a main program, for local test
+    public static void main(String[] args) {
+        TestServer.start();
+        System.out.println(Url);
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
@@ -43,20 +58,5 @@ public class SlowRider extends BaseServlet {
                 break;
             }
         }
-    }
-
-    private static boolean pause(int sleepTime) {
-        try {
-            Thread.sleep(sleepTime);
-        } catch (InterruptedException e) {
-            return true;
-        }
-        return false;
-    }
-
-    // allow the servlet to run as a main program, for local test
-    public static void main(String[] args) {
-        TestServer.start();
-        System.out.println(Url);
     }
 }

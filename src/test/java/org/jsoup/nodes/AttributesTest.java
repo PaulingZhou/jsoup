@@ -85,7 +85,8 @@ public class AttributesTest {
         assertFalse(a.hasKey("Hello"));
     }
 
-    @Test public void testIteratorHasNext() {
+    @Test
+    public void testIteratorHasNext() {
         Attributes a = new Attributes();
         a.put("Tot", "1");
         a.put("Hello", "2");
@@ -103,8 +104,8 @@ public class AttributesTest {
     public void testIterator() {
         Attributes a = new Attributes();
         String[][] datas = {{"Tot", "raul"},
-            {"Hello", "pismuth"},
-            {"data-name", "Jsoup"}};
+                {"Hello", "pismuth"},
+                {"data-name", "Jsoup"}};
         for (String[] atts : datas) {
             a.put(atts[0], atts[1]);
         }
@@ -149,7 +150,7 @@ public class AttributesTest {
     public void testSetKeyConsistency() {
         Attributes a = new Attributes();
         a.put("a", "a");
-        for(Attribute at : a) {
+        for (Attribute at : a) {
             at.setKey("b");
         }
         assertFalse("Attribute 'a' not correctly removed", a.hasKey("a"));

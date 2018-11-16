@@ -29,7 +29,8 @@ public class DataUtilTest {
         assertEquals(null, DataUtil.getCharsetFromContentType("text/html;charset=Unknown"));
     }
 
-    @Test public void testQuotedCharset() {
+    @Test
+    public void testQuotedCharset() {
         assertEquals("utf-8", DataUtil.getCharsetFromContentType("text/html; charset=\"utf-8\""));
         assertEquals("UTF-8", DataUtil.getCharsetFromContentType("text/html;charset=\"UTF-8\""));
         assertEquals("ISO-8859-1", DataUtil.getCharsetFromContentType("text/html; charset=\"ISO-8859-1\""));
@@ -50,13 +51,15 @@ public class DataUtilTest {
         return null;
     }
 
-    @Test public void discardsSpuriousByteOrderMark() throws IOException {
+    @Test
+    public void discardsSpuriousByteOrderMark() throws IOException {
         String html = "\uFEFF<html><head><title>One</title></head><body>Two</body></html>";
         Document doc = DataUtil.parseInputStream(stream(html), "UTF-8", "http://foo.com/", Parser.htmlParser());
         assertEquals("One", doc.head().text());
     }
 
-    @Test public void discardsSpuriousByteOrderMarkWhenNoCharsetSet() throws IOException {
+    @Test
+    public void discardsSpuriousByteOrderMarkWhenNoCharsetSet() throws IOException {
         String html = "\uFEFF<html><head><title>One</title></head><body>Two</body></html>";
         Document doc = DataUtil.parseInputStream(stream(html), null, "http://foo.com/", Parser.htmlParser());
         assertEquals("One", doc.head().text());
@@ -93,7 +96,7 @@ public class DataUtilTest {
         assertEquals(DataUtil.boundaryLength, m2.length());
         assertNotSame(m1, m2);
     }
-    
+
     @Test
     public void wrongMetaCharsetFallback() throws IOException {
         String html = "<html><head><meta charset=iso-8></head><body></body></html>";
@@ -101,11 +104,11 @@ public class DataUtilTest {
         Document doc = DataUtil.parseInputStream(stream(html), null, "http://example.com", Parser.htmlParser());
 
         final String expected = "<html>\n" +
-            " <head>\n" +
-            "  <meta charset=\"iso-8\">\n" +
-            " </head>\n" +
-            " <body></body>\n" +
-            "</html>";
+                " <head>\n" +
+                "  <meta charset=\"iso-8\">\n" +
+                " </head>\n" +
+                " <body></body>\n" +
+                "</html>";
 
         assertEquals(expected, doc.toString());
     }
@@ -169,9 +172,9 @@ public class DataUtilTest {
     public void supportsXmlCharsetDeclaration() throws IOException {
         String encoding = "iso-8859-1";
         InputStream soup = new ByteArrayInputStream((
-            "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" +
-                "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">" +
-                "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">Hellö Wörld!</html>"
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" +
+                        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">" +
+                        "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">Hellö Wörld!</html>"
         ).getBytes(encoding));
 
         Document doc = Jsoup.parse(soup, null, "");

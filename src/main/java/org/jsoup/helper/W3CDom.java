@@ -31,6 +31,7 @@ public class W3CDom {
 
     /**
      * Convert a jsoup Document to a W3C Document.
+     *
      * @param in jsoup doc
      * @return w3c doc
      */
@@ -38,8 +39,8 @@ public class W3CDom {
         Validate.notNull(in);
         DocumentBuilder builder;
         try {
-        	//set the factory to be namespace-aware
-        	factory.setNamespaceAware(true);
+            //set the factory to be namespace-aware
+            factory.setNamespaceAware(true);
             builder = factory.newDocumentBuilder();
             Document out = builder.newDocument();
             convert(in, out);
@@ -52,7 +53,8 @@ public class W3CDom {
     /**
      * Converts a jsoup document into the provided W3C Document. If required, you can set options on the output document
      * before converting.
-     * @param in jsoup doc
+     *
+     * @param in  jsoup doc
      * @param out w3c doc
      * @see org.jsoup.helper.W3CDom#fromJsoup(org.jsoup.nodes.Document)
      */
@@ -62,6 +64,26 @@ public class W3CDom {
 
         org.jsoup.nodes.Element rootEl = in.child(0); // skip the #root node
         NodeTraversor.traverse(new W3CBuilder(out), rootEl);
+    }
+
+    /**
+     * Serialize a W3C document to a String.
+     *
+     * @param doc Document
+     * @return Document as string
+     */
+    public String asString(Document doc) {
+        try {
+            DOMSource domSource = new DOMSource(doc);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.transform(domSource, result);
+            return writer.toString();
+        } catch (TransformerException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**
@@ -90,8 +112,8 @@ public class W3CDom {
                 String tagName = sourceEl.tagName();
 
                 Element el = namespace == null && tagName.contains(":") ?
-                    doc.createElementNS("", tagName) : // doesn't have a real namespace defined
-                    doc.createElementNS(namespace, tagName);
+                        doc.createElementNS("", tagName) : // doesn't have a real namespace defined
+                        doc.createElementNS(namespace, tagName);
                 copyAttributes(sourceEl, el);
                 if (dest == null) { // sets up the root
                     doc.appendChild(el);
@@ -157,24 +179,5 @@ public class W3CDom {
             return pos > 0 ? el.tagName().substring(0, pos) : "";
         }
 
-    }
-
-    /**
-     * Serialize a W3C document to a String.
-     * @param doc Document
-     * @return Document as string
-     */
-    public String asString(Document doc) {
-        try {
-            DOMSource domSource = new DOMSource(doc);
-            StringWriter writer = new StringWriter();
-            StreamResult result = new StreamResult(writer);
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            transformer.transform(domSource, result);
-            return writer.toString();
-        } catch (TransformerException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

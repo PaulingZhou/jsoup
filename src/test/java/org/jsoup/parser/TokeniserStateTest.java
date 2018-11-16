@@ -16,16 +16,16 @@ import static org.junit.Assert.assertEquals;
 
 public class TokeniserStateTest {
 
-    final char[] whiteSpace = { '\t', '\n', '\r', '\f', ' ' };
-    final char[] quote = { '\'', '"' };
+    final char[] whiteSpace = {'\t', '\n', '\r', '\f', ' '};
+    final char[] quote = {'\'', '"'};
 
     @Test
     public void ensureSearchArraysAreSorted() {
         char[][] arrays = {
-            TokeniserState.attributeSingleValueCharsSorted,
-            TokeniserState.attributeDoubleValueCharsSorted,
-            TokeniserState.attributeNameCharsSorted,
-            TokeniserState.attributeValueUnquoted
+                TokeniserState.attributeSingleValueCharsSorted,
+                TokeniserState.attributeDoubleValueCharsSorted,
+                TokeniserState.attributeNameCharsSorted,
+                TokeniserState.attributeValueUnquoted
         };
 
         for (char[] array : arrays) {
@@ -143,14 +143,14 @@ public class TokeniserStateTest {
         String expectedOutput = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0//EN\">";
         for (char q : quote) {
             for (char ws : whiteSpace) {
-                String[] htmls = { 
+                String[] htmls = {
                         String.format("<!DOCTYPE html%cPUBLIC %c-//W3C//DTD HTML 4.0//EN%c>", ws, q, q),
                         String.format("<!DOCTYPE html %cPUBLIC %c-//W3C//DTD HTML 4.0//EN%c>", ws, q, q),
                         String.format("<!DOCTYPE html PUBLIC%c%c-//W3C//DTD HTML 4.0//EN%c>", ws, q, q),
                         String.format("<!DOCTYPE html PUBLIC %c%c-//W3C//DTD HTML 4.0//EN%c>", ws, q, q),
                         String.format("<!DOCTYPE html PUBLIC %c-//W3C//DTD HTML 4.0//EN%c%c>", q, q, ws),
                         String.format("<!DOCTYPE html PUBLIC%c-//W3C//DTD HTML 4.0//EN%c%c>", q, q, ws)
-                    };
+                };
                 for (String html : htmls) {
                     Document doc = Jsoup.parse(html);
                     assertEquals(expectedOutput, doc.childNode(0).outerHtml());
@@ -171,7 +171,7 @@ public class TokeniserStateTest {
                         String.format("<!DOCTYPE html SYSTEM %c%chttp://www.w3.org/TR/REC-html40/strict.dtd%c>", ws, q, q),
                         String.format("<!DOCTYPE html SYSTEM %chttp://www.w3.org/TR/REC-html40/strict.dtd%c%c>", q, q, ws),
                         String.format("<!DOCTYPE html SYSTEM%chttp://www.w3.org/TR/REC-html40/strict.dtd%c%c>", q, q, ws)
-                    };
+                };
                 for (String html : htmls) {
                     Document doc = Jsoup.parse(html);
                     assertEquals(expectedOutput, doc.childNode(0).outerHtml());
@@ -184,14 +184,14 @@ public class TokeniserStateTest {
     public void testPublicAndSystemIdentifiersWithWhitespace() {
         String expectedOutput = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0//EN\""
                 + " \"http://www.w3.org/TR/REC-html40/strict.dtd\">";
-    	for (char q : quote) {
+        for (char q : quote) {
             for (char ws : whiteSpace) {
                 String[] htmls = {
                         String.format("<!DOCTYPE html PUBLIC %c-//W3C//DTD HTML 4.0//EN%c"
                                 + "%c%chttp://www.w3.org/TR/REC-html40/strict.dtd%c>", q, q, ws, q, q),
                         String.format("<!DOCTYPE html PUBLIC %c-//W3C//DTD HTML 4.0//EN%c"
                                 + "%chttp://www.w3.org/TR/REC-html40/strict.dtd%c>", q, q, q, q)
-                    };
+                };
                 for (String html : htmls) {
                     Document doc = Jsoup.parse(html);
                     assertEquals(expectedOutput, doc.childNode(0).outerHtml());
@@ -200,7 +200,8 @@ public class TokeniserStateTest {
         }
     }
 
-    @Test public void handlesLessInTagThanAsNewTag() {
+    @Test
+    public void handlesLessInTagThanAsNewTag() {
         // out of spec, but clear author intent
         String html = "<p\n<p<div id=one <span>Two";
         Document doc = Jsoup.parse(html);

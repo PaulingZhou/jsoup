@@ -13,7 +13,13 @@ abstract class Token {
 
     private Token() {
     }
-    
+
+    static void reset(StringBuilder sb) {
+        if (sb != null) {
+            sb.delete(0, sb.length());
+        }
+    }
+
     String tokenType() {
         return this.getClass().getSimpleName();
     }
@@ -24,17 +30,68 @@ abstract class Token {
      */
     abstract Token reset();
 
-    static void reset(StringBuilder sb) {
-        if (sb != null) {
-            sb.delete(0, sb.length());
-        }
+    final boolean isDoctype() {
+        return type == TokenType.Doctype;
+    }
+
+    final Doctype asDoctype() {
+        return (Doctype) this;
+    }
+
+    final boolean isStartTag() {
+        return type == TokenType.StartTag;
+    }
+
+    final StartTag asStartTag() {
+        return (StartTag) this;
+    }
+
+    final boolean isEndTag() {
+        return type == TokenType.EndTag;
+    }
+
+    final EndTag asEndTag() {
+        return (EndTag) this;
+    }
+
+    final boolean isComment() {
+        return type == TokenType.Comment;
+    }
+
+    final Comment asComment() {
+        return (Comment) this;
+    }
+
+    final boolean isCharacter() {
+        return type == TokenType.Character;
+    }
+
+    final boolean isCData() {
+        return this instanceof CData;
+    }
+
+    final Character asCharacter() {
+        return (Character) this;
+    }
+
+    final boolean isEOF() {
+        return type == TokenType.EOF;
+    }
+
+    public enum TokenType {
+        Doctype,
+        StartTag,
+        EndTag,
+        Comment,
+        Character, // note no CData - treated in builder as an extension of Character
+        EOF
     }
 
     static final class Doctype extends Token {
         final StringBuilder name = new StringBuilder();
-        String pubSysKey = null;
         final StringBuilder publicIdentifier = new StringBuilder();
         final StringBuilder systemIdentifier = new StringBuilder();
+        String pubSysKey = null;
         boolean forceQuirks = false;
 
         Doctype() {
@@ -75,13 +132,13 @@ abstract class Token {
     static abstract class Tag extends Token {
         protected String tagName;
         protected String normalName; // lc version of tag name, for case insensitive tree build
+        boolean selfClosing = false;
+        Attributes attributes; // start tags get attributes on construction. End tags get attributes on first new attribute (but only for parser convenience, not used).
         private String pendingAttributeName; // attribute names are generally caught in one hop, not accumulated
         private StringBuilder pendingAttributeValue = new StringBuilder(); // but values are accumulated, from e.g. & in hrefs
         private String pendingAttributeValueS; // try to get attr vals in one shot, vs Builder
         private boolean hasEmptyAttributeValue = false; // distinguish boolean attribute from empty string value
         private boolean hasPendingAttributeValue = false;
-        boolean selfClosing = false;
-        Attributes attributes; // start tags get attributes on construction. End tags get attributes on first new attribute (but only for parser convenience, not used).
 
         @Override
         Tag reset() {
@@ -197,7 +254,7 @@ abstract class Token {
                 pendingAttributeValue.appendCodePoint(codepoint);
             }
         }
-        
+
         final void setEmptyAttributeValue() {
             hasEmptyAttributeValue = true;
         }
@@ -243,7 +300,7 @@ abstract class Token {
         }
     }
 
-    final static class EndTag extends Tag{
+    final static class EndTag extends Tag {
         EndTag() {
             super();
             type = TokenType.EndTag;
@@ -259,15 +316,15 @@ abstract class Token {
         final StringBuilder data = new StringBuilder();
         boolean bogus = false;
 
+        Comment() {
+            type = TokenType.Comment;
+        }
+
         @Override
         Token reset() {
             reset(data);
             bogus = false;
             return this;
-        }
-
-        Comment() {
-            type = TokenType.Comment;
         }
 
         String getData() {
@@ -331,62 +388,5 @@ abstract class Token {
         Token reset() {
             return this;
         }
-    }
-
-    final boolean isDoctype() {
-        return type == TokenType.Doctype;
-    }
-
-    final Doctype asDoctype() {
-        return (Doctype) this;
-    }
-
-    final boolean isStartTag() {
-        return type == TokenType.StartTag;
-    }
-
-    final StartTag asStartTag() {
-        return (StartTag) this;
-    }
-
-    final boolean isEndTag() {
-        return type == TokenType.EndTag;
-    }
-
-    final EndTag asEndTag() {
-        return (EndTag) this;
-    }
-
-    final boolean isComment() {
-        return type == TokenType.Comment;
-    }
-
-    final Comment asComment() {
-        return (Comment) this;
-    }
-
-    final boolean isCharacter() {
-        return type == TokenType.Character;
-    }
-
-    final boolean isCData() {
-        return this instanceof CData;
-    }
-
-    final Character asCharacter() {
-        return (Character) this;
-    }
-
-    final boolean isEOF() {
-        return type == TokenType.EOF;
-    }
-
-    public enum TokenType {
-        Doctype,
-        StartTag,
-        EndTag,
-        Comment,
-        Character, // note no CData - treated in builder as an extension of Character
-        EOF
     }
 }

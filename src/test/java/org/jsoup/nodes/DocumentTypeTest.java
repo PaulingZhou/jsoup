@@ -4,7 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.parser.Parser;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for the DocumentType node
@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class DocumentTypeTest {
     @Test
     public void constructorValidationOkWithBlankName() {
-        DocumentType fail = new DocumentType("","", "");
+        DocumentType fail = new DocumentType("", "", "");
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -24,10 +24,11 @@ public class DocumentTypeTest {
 
     @Test
     public void constructorValidationOkWithBlankPublicAndSystemIds() {
-        DocumentType fail = new DocumentType("html","", "");
+        DocumentType fail = new DocumentType("html", "", "");
     }
 
-    @Test public void outerHtmlGeneration() {
+    @Test
+    public void outerHtmlGeneration() {
         DocumentType html5 = new DocumentType("html", "", "");
         assertEquals("<!doctype html>", html5.outerHtml());
 
@@ -41,7 +42,8 @@ public class DocumentTypeTest {
         assertEquals("<!DOCTYPE notHtml PUBLIC \"--public\" \"--system\">", combo.outerHtml());
     }
 
-    @Test public void testRoundTrip() {
+    @Test
+    public void testRoundTrip() {
         String base = "<!DOCTYPE html>";
         assertEquals("<!doctype html>", htmlOutput(base));
         assertEquals(base, xmlOutput(base));

@@ -23,7 +23,7 @@ public class ConstrainableInputStreamTest {
 
         String url = "http://direct.infohound.net/tools/large.html"; // 280 K
         BufferedInputStream inputStream = Jsoup.connect(url).maxBodySize(capSize)
-            .execute().bodyStream();
+                .execute().bodyStream();
 
         assertTrue(inputStream instanceof ConstrainableInputStream);
         ConstrainableInputStream stream = (ConstrainableInputStream) inputStream;

@@ -4,8 +4,8 @@ import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.W3CDom;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.FormElement;
 import org.jsoup.parser.HtmlTreeBuilder;
@@ -27,9 +27,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- Tests the URL connection. Not enabled by default, so tests don't require network connection.
-
- @author Jonathan Hedley, jonathan@hedley.net */
+ * Tests the URL connection. Not enabled by default, so tests don't require network connection.
+ *
+ * @author Jonathan Hedley, jonathan@hedley.net
+ */
 @Ignore // ignored by default so tests don't require network access. comment out to enable.
 // todo: rebuild these into a local Jetty test server, so not reliant on the vagaries of the internet.
 public class UrlConnectTest {
@@ -37,17 +38,21 @@ public class UrlConnectTest {
     private static final String WEBSITE_WITH_SNI = "https://jsoup.org/";
     public static String browserUa = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36";
 
+    private static String ihVal(String key, Document doc) {
+        return doc.select("th:contains(" + key + ") + td").first().text();
+    }
+
     @Test
     public void fetchBaidu() throws IOException {
-        Connection.Response res = Jsoup.connect("http://www.baidu.com/").timeout(10*1000).execute();
+        Connection.Response res = Jsoup.connect("http://www.baidu.com/").timeout(10 * 1000).execute();
         Document doc = res.parse();
 
         assertEquals("GBK", doc.outputSettings().charset().displayName());
         assertEquals("GBK", res.charset());
-        assert(res.hasCookie("BAIDUID"));
+        assert (res.hasCookie("BAIDUID"));
         assertEquals("text/html;charset=gbk", res.contentType());
     }
-    
+
     @Test
     public void exceptOnUnknownContentType() {
         String url = "http://direct.jsoup.org/rez/osi_logo.png"; // not text/* but image/png, should throw
@@ -68,10 +73,6 @@ public class UrlConnectTest {
     public void ignoresContentTypeIfSoConfigured() throws IOException {
         Document doc = Jsoup.connect("https://jsoup.org/rez/osi_logo.png").ignoreContentType(true).get();
         assertEquals("", doc.title()); // this will cause an ugly parse tree
-    }
-
-    private static String ihVal(String key, Document doc) {
-        return doc.select("th:contains("+key+") + td").first().text();
     }
 
     @Test
@@ -203,16 +204,16 @@ public class UrlConnectTest {
     @Test
     public void handles200WithNoContent() throws IOException {
         Connection con = Jsoup
-            .connect("http://direct.infohound.net/tools/200-no-content.pl")
-            .userAgent(browserUa);
+                .connect("http://direct.infohound.net/tools/200-no-content.pl")
+                .userAgent(browserUa);
         Connection.Response res = con.execute();
         Document doc = res.parse();
         assertEquals(200, res.statusCode());
 
         con = Jsoup
-            .connect("http://direct.infohound.net/tools/200-no-content.pl")
-            .parser(Parser.xmlParser())
-            .userAgent(browserUa);
+                .connect("http://direct.infohound.net/tools/200-no-content.pl")
+                .parser(Parser.xmlParser())
+                .userAgent(browserUa);
         res = con.execute();
         doc = res.parse();
         assertEquals(200, res.statusCode());
@@ -296,8 +297,9 @@ public class UrlConnectTest {
      * <p/>
      * read for more details:
      * http://en.wikipedia.org/wiki/Server_Name_Indication
-     *
+     * <p>
      * Test is ignored independent from others as it requires JDK 1.6
+     *
      * @throws Exception
      */
     @Test(expected = IOException.class)
@@ -554,7 +556,8 @@ public class UrlConnectTest {
         // if we didn't notice it was utf8, would look like: Location: /tools/testð©.html
     }
 
-    @Test public void handlesEscapesInRedirecct() throws IOException {
+    @Test
+    public void handlesEscapesInRedirecct() throws IOException {
         Document doc = Jsoup.connect("http://infohound.net/tools/302-escaped.pl").get();
         assertEquals("http://infohound.net/tools/q.pl?q=one%20two", doc.location());
 
@@ -578,9 +581,9 @@ public class UrlConnectTest {
         Connection.Response res = Jsoup.connect("http://brabantn.ws/Q4F").execute();
         Document doc = res.parse();
         assertEquals(
-            "http://www.omroepbrabant.nl/?news/2474781303/Gestrande+ree+in+Oss+niet+verdoofd,+maar+doodgeschoten+%E2%80%98Dit+kan+gewoon+niet,+bizar%E2%80%99+[VIDEO].aspx",
-            doc.location()
-            );
+                "http://www.omroepbrabant.nl/?news/2474781303/Gestrande+ree+in+Oss+niet+verdoofd,+maar+doodgeschoten+%E2%80%98Dit+kan+gewoon+niet,+bizar%E2%80%99+[VIDEO].aspx",
+                doc.location()
+        );
     }
 
     @Test
@@ -588,12 +591,13 @@ public class UrlConnectTest {
         Connection.Response res = Jsoup.connect("https://ssl.souq.com/sa-en/2724288604627/s").execute();
         Document doc = res.parse();
         assertEquals(
-            "https://saudi.souq.com/sa-en/%D8%AE%D8%B2%D9%86%D8%A9-%D8%A2%D9%85%D9%86%D8%A9-3-%D8%B7%D8%A8%D9%82%D8%A7%D8%AA-%D8%A8%D9%86%D8%B8%D8%A7%D9%85-%D9%82%D9%81%D9%84-%D8%A5%D9%84%D9%83%D8%AA%D8%B1%D9%88%D9%86%D9%8A-bsd11523-6831477/i/?ctype=dsrch",
-            doc.location()
+                "https://saudi.souq.com/sa-en/%D8%AE%D8%B2%D9%86%D8%A9-%D8%A2%D9%85%D9%86%D8%A9-3-%D8%B7%D8%A8%D9%82%D8%A7%D8%AA-%D8%A8%D9%86%D8%B8%D8%A7%D9%85-%D9%82%D9%81%D9%84-%D8%A5%D9%84%D9%83%D8%AA%D8%B1%D9%88%D9%86%D9%8A-bsd11523-6831477/i/?ctype=dsrch",
+                doc.location()
         );
     }
 
-   @Test public void handlesEscapedRedirectUrls() throws IOException {
+    @Test
+    public void handlesEscapedRedirectUrls() throws IOException {
         String url = "http://www.altalex.com/documents/news/2016/12/06/questioni-civilistiche-conseguenti-alla-depenalizzazione";
         // sends: Location:http://shop.wki.it/shared/sso/sso.aspx?sso=&url=http%3a%2f%2fwww.altalex.com%2fsession%2fset%2f%3freturnurl%3dhttp%253a%252f%252fwww.altalex.com%253a80%252fdocuments%252fnews%252f2016%252f12%252f06%252fquestioni-civilistiche-conseguenti-alla-depenalizzazione
         // then to: http://www.altalex.com/session/set/?returnurl=http%3a%2f%2fwww.altalex.com%3a80%2fdocuments%2fnews%2f2016%2f12%2f06%2fquestioni-civilistiche-conseguenti-alla-depenalizzazione&sso=RDRG6T684G4AK2E7U591UGR923
@@ -610,7 +614,8 @@ public class UrlConnectTest {
         assertEquals(200, res.statusCode());
     }
 
-    @Test public void handlesUnicodeInQuery() throws IOException {
+    @Test
+    public void handlesUnicodeInQuery() throws IOException {
         Document doc = Jsoup.connect("https://www.google.pl/search?q=gąska").get();
         assertEquals("gąska - Szukaj w Google", doc.title());
 
@@ -618,7 +623,8 @@ public class UrlConnectTest {
         assertEquals("Index of /archiv/TV/A/%23No.Title", doc.title());
     }
 
-    @Test public void handlesSuperDeepPage() throws IOException {
+    @Test
+    public void handlesSuperDeepPage() throws IOException {
         // https://github.com/jhy/jsoup/issues/955
 
         long start = System.currentTimeMillis();
@@ -630,7 +636,8 @@ public class UrlConnectTest {
         assertTrue(System.currentTimeMillis() - start < 1000);
     }
 
-    @Test public void handles966() throws IOException {
+    @Test
+    public void handles966() throws IOException {
         // http://szshb.nxszs.gov.cn/
         // https://github.com/jhy/jsoup/issues/966
 

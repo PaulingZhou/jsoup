@@ -24,24 +24,30 @@ import static org.junit.Assert.assertTrue;
 public class HttpConnectionTest {
     /* most actual network http connection tests are in integration */
 
-    @Rule public MultiLocaleRule rule = new MultiLocaleRule();
+    @Rule
+    public MultiLocaleRule rule = new MultiLocaleRule();
 
-    @Test(expected=IllegalArgumentException.class) public void throwsExceptionOnParseWithoutExecute() throws IOException {
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsExceptionOnParseWithoutExecute() throws IOException {
         Connection con = HttpConnection.connect("http://example.com");
         con.response().parse();
     }
 
-    @Test(expected=IllegalArgumentException.class) public void throwsExceptionOnBodyWithoutExecute() throws IOException {
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsExceptionOnBodyWithoutExecute() throws IOException {
         Connection con = HttpConnection.connect("http://example.com");
         con.response().body();
     }
 
-    @Test(expected=IllegalArgumentException.class) public void throwsExceptionOnBodyAsBytesWithoutExecute() throws IOException {
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsExceptionOnBodyAsBytesWithoutExecute() throws IOException {
         Connection con = HttpConnection.connect("http://example.com");
         con.response().bodyAsBytes();
     }
 
-    @Test @MultiLocaleTest public void caseInsensitiveHeaders() {
+    @Test
+    @MultiLocaleTest
+    public void caseInsensitiveHeaders() {
         Connection.Response res = new HttpConnection.Response();
         res.header("Accept-Encoding", "gzip");
         res.header("content-type", "text/html");
@@ -68,7 +74,8 @@ public class HttpConnectionTest {
         assertEquals("deflate", res.header("accept-Encoding"));
     }
 
-    @Test public void headers() {
+    @Test
+    public void headers() {
         Connection con = HttpConnection.connect("http://example.com");
         Map<String, String> headers = new HashMap<>();
         headers.put("content-type", "text/html");
@@ -80,7 +87,8 @@ public class HttpConnectionTest {
         assertEquals("http://example.com", con.request().header("Host"));
     }
 
-    @Test public void sameHeadersCombineWithComma() {
+    @Test
+    public void sameHeadersCombineWithComma() {
         Map<String, List<String>> headers = new HashMap<>();
         List<String> values = new ArrayList<>();
         values.add("no-cache");
@@ -91,7 +99,8 @@ public class HttpConnectionTest {
         assertEquals("no-cache, no-store", res.header("Cache-Control"));
     }
 
-    @Test public void multipleHeaders() {
+    @Test
+    public void multipleHeaders() {
         Connection.Request req = new HttpConnection.Request();
         req.addHeader("Accept", "Something");
         req.addHeader("Accept", "Everything");
@@ -124,7 +133,8 @@ public class HttpConnectionTest {
         assertTrue(headers.get("Accept") == null);
     }
 
-    @Test public void ignoresEmptySetCookies() {
+    @Test
+    public void ignoresEmptySetCookies() {
         // prep http response header map
         Map<String, List<String>> headers = new HashMap<>();
         headers.put("Set-Cookie", Collections.<String>emptyList());
@@ -133,7 +143,8 @@ public class HttpConnectionTest {
         assertEquals(0, res.cookies().size());
     }
 
-    @Test public void ignoresEmptyCookieNameAndVals() {
+    @Test
+    public void ignoresEmptyCookieNameAndVals() {
         // prep http response header map
         Map<String, List<String>> headers = new HashMap<>();
         List<String> cookieStrings = new ArrayList<>();
@@ -154,52 +165,60 @@ public class HttpConnectionTest {
         assertEquals("data", res.cookie("four"));
     }
 
-    @Test public void connectWithUrl() throws MalformedURLException {
+    @Test
+    public void connectWithUrl() throws MalformedURLException {
         Connection con = HttpConnection.connect(new URL("http://example.com"));
         assertEquals("http://example.com", con.request().url().toExternalForm());
     }
 
-    @Test(expected=IllegalArgumentException.class) public void throwsOnMalformedUrl() {
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsOnMalformedUrl() {
         Connection con = HttpConnection.connect("bzzt");
     }
 
-    @Test public void userAgent() {
+    @Test
+    public void userAgent() {
         Connection con = HttpConnection.connect("http://example.com/");
         assertEquals(HttpConnection.DEFAULT_UA, con.request().header("User-Agent"));
         con.userAgent("Mozilla");
         assertEquals("Mozilla", con.request().header("User-Agent"));
     }
 
-    @Test public void timeout() {
+    @Test
+    public void timeout() {
         Connection con = HttpConnection.connect("http://example.com/");
         assertEquals(30 * 1000, con.request().timeout());
         con.timeout(1000);
         assertEquals(1000, con.request().timeout());
     }
 
-    @Test public void referrer() {
+    @Test
+    public void referrer() {
         Connection con = HttpConnection.connect("http://example.com/");
         con.referrer("http://foo.com");
         assertEquals("http://foo.com", con.request().header("Referer"));
     }
 
-    @Test public void method() {
+    @Test
+    public void method() {
         Connection con = HttpConnection.connect("http://example.com/");
         assertEquals(Connection.Method.GET, con.request().method());
         con.method(Connection.Method.POST);
         assertEquals(Connection.Method.POST, con.request().method());
     }
 
-    @Test(expected=IllegalArgumentException.class) public void throwsOnOddData() {
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsOnOddData() {
         Connection con = HttpConnection.connect("http://example.com/");
         con.data("Name", "val", "what");
     }
 
-    @Test public void data() {
+    @Test
+    public void data() {
         Connection con = HttpConnection.connect("http://example.com/");
         con.data("Name", "Val", "Foo", "bar");
         Collection<Connection.KeyVal> values = con.request().data();
-        Object[] data =  values.toArray();
+        Object[] data = values.toArray();
         Connection.KeyVal one = (Connection.KeyVal) data[0];
         Connection.KeyVal two = (Connection.KeyVal) data[1];
         assertEquals("Name", one.key());
@@ -208,13 +227,15 @@ public class HttpConnectionTest {
         assertEquals("bar", two.value());
     }
 
-    @Test public void cookie() {
+    @Test
+    public void cookie() {
         Connection con = HttpConnection.connect("http://example.com/");
         con.cookie("Name", "Val");
         assertEquals("Val", con.request().cookie("Name"));
     }
 
-    @Test public void inputStream() {
+    @Test
+    public void inputStream() {
         Connection.KeyVal kv = HttpConnection.KeyVal.create("file", "thumb.jpg", ParseTest.inputStreamFrom("Check"));
         assertEquals("file", kv.key());
         assertEquals("thumb.jpg", kv.value());
@@ -226,19 +247,22 @@ public class HttpConnectionTest {
         assertFalse(kv.hasInputStream());
     }
 
-    @Test public void requestBody() {
+    @Test
+    public void requestBody() {
         Connection con = HttpConnection.connect("http://example.com/");
         con.requestBody("foo");
         assertEquals("foo", con.request().requestBody());
     }
 
-    @Test public void encodeUrl() throws MalformedURLException {
+    @Test
+    public void encodeUrl() throws MalformedURLException {
         URL url1 = new URL("http://test.com/?q=white space");
         URL url2 = HttpConnection.encodeUrl(url1);
         assertEquals("http://test.com/?q=white%20space", url2.toExternalForm());
     }
 
-    @Test public void noUrlThrowsValidationError() throws IOException {
+    @Test
+    public void noUrlThrowsValidationError() throws IOException {
         HttpConnection con = new HttpConnection();
         boolean threw = false;
         try {

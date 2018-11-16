@@ -76,7 +76,8 @@ import java.util.IdentityHashMap;
  */
 public class Selector {
     // not instantiable
-    private Selector() {}
+    private Selector() {
+    }
 
     /**
      * Find elements matching selector.
@@ -95,7 +96,7 @@ public class Selector {
      * Find elements matching selector.
      *
      * @param evaluator CSS selector
-     * @param root root element to descend into
+     * @param root      root element to descend into
      * @return matching elements, empty if none
      */
     public static Elements select(Evaluator evaluator, Element root) {
@@ -150,8 +151,9 @@ public class Selector {
 
     /**
      * Find the first element that matches the query.
+     *
      * @param cssQuery CSS selector
-     * @param root root element to descend into
+     * @param root     root element to descend into
      * @return the matching element, or <b>null</b> if none.
      */
     public static Element selectFirst(String cssQuery, Element root) {

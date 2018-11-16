@@ -21,17 +21,20 @@ import java.util.Map;
  * only to be complete.
  */
 class BuildEntities {
+    private static ByName byName = new ByName();
+    private static ByCode byCode = new ByCode();
+
     public static void main(String[] args) throws IOException {
         String url = "https://www.w3.org/TR/2012/WD-html5-20121025/entities.json";
         Connection.Response res = Jsoup.connect(url)
-            .ignoreContentType(true)
-            .userAgent(UrlConnectTest.browserUa)
-            .execute();
+                .ignoreContentType(true)
+                .userAgent(UrlConnectTest.browserUa)
+                .execute();
 
         Gson gson = new Gson();
         Map<String, CharacterRef> input = gson.fromJson(res.body(),
-            new TypeToken<Map<String, CharacterRef>>() {
-            }.getType());
+                new TypeToken<Map<String, CharacterRef>>() {
+                }.getType());
 
 
         // build name sorted base and full character lists:
@@ -86,6 +89,9 @@ class BuildEntities {
         System.out.println("Wrote " + name + " to " + file.getAbsolutePath());
     }
 
+    private static String d(int d) {
+        return Integer.toString(d, Entities.codepointRadix);
+    }
 
     private static class CharacterRef {
         int[] codepoints;
@@ -95,15 +101,11 @@ class BuildEntities {
         @Override
         public String toString() {
             return name
-                + "="
-                + d(codepoints[0])
-                + (codepoints.length > 1 ? "," + d(codepoints[1]) : "")
-                + ";" + d(codeIndex);
+                    + "="
+                    + d(codepoints[0])
+                    + (codepoints.length > 1 ? "," + d(codepoints[1]) : "")
+                    + ";" + d(codeIndex);
         }
-    }
-
-    private static String d(int d) {
-        return Integer.toString(d, Entities.codepointRadix);
     }
 
     private static class ByName implements Comparator<CharacterRef> {
@@ -131,7 +133,4 @@ class BuildEntities {
                 return c2.length - c1.length; // pushes multi down the list so hits on singles first (don't support multi lookup by codepoint yet)
         }
     }
-
-    private static ByName byName = new ByName();
-    private static ByCode byCode = new ByCode();
 }

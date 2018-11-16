@@ -1,4 +1,4 @@
 /**
- HTML document structure nodes.
+ * HTML document structure nodes.
  */
 package org.jsoup.nodes;

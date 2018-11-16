@@ -1,8 +1,8 @@
 package org.jsoup.nodes;
 
 import org.jsoup.SerializationException;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 
 import java.io.IOException;
 
@@ -15,7 +15,8 @@ public class XmlDeclaration extends LeafNode {
 
     /**
      * Create a new XML declaration
-     * @param name of declaration
+     *
+     * @param name                    of declaration
      * @param isProcessingInstruction is processing instruction
      */
     public XmlDeclaration(String name, boolean isProcessingInstruction) {
@@ -26,8 +27,9 @@ public class XmlDeclaration extends LeafNode {
 
     /**
      * Create a new XML declaration
-     * @param name of declaration
-     * @param baseUri Leaf Nodes don't have base URIs; they inherit from their Element
+     *
+     * @param name                    of declaration
+     * @param baseUri                 Leaf Nodes don't have base URIs; they inherit from their Element
      * @param isProcessingInstruction is processing instruction
      * @see XmlDeclaration#XmlDeclaration(String, boolean)
      * @deprecated
@@ -42,6 +44,7 @@ public class XmlDeclaration extends LeafNode {
 
     /**
      * Get the name of this declaration.
+     *
      * @return name of this declaration.
      */
     public String name() {
@@ -50,6 +53,7 @@ public class XmlDeclaration extends LeafNode {
 
     /**
      * Get the unencoded XML declaration.
+     *
      * @return XML declaration
      */
     public String getWholeDeclaration() {
@@ -73,13 +77,13 @@ public class XmlDeclaration extends LeafNode {
 
     void outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {
         accum
-            .append("<")
-            .append(isProcessingInstruction ? "!" : "?")
-            .append(coreValue());
+                .append("<")
+                .append(isProcessingInstruction ? "!" : "?")
+                .append(coreValue());
         getWholeDeclaration(accum, out);
         accum
-            .append(isProcessingInstruction ? "!" : "?")
-            .append(">");
+                .append(isProcessingInstruction ? "!" : "?")
+                .append(">");
     }
 
     void outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {

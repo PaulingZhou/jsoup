@@ -1,6 +1,5 @@
 package org.jsoup.parser;
 
-import java.io.UnsupportedEncodingException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Comment;
@@ -9,6 +8,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.junit.Test;
+
+import java.io.UnsupportedEncodingException;
 
 import static org.jsoup.parser.CharacterReader.maxBufferLen;
 import static org.junit.Assert.assertEquals;
@@ -44,7 +45,8 @@ public class TokeniserTest {
         }
     }
 
-    @Test public void handleSuperLargeTagNames() {
+    @Test
+    public void handleSuperLargeTagNames() {
         // unlikely, but valid. so who knows.
 
         StringBuilder sb = new StringBuilder(maxBufferLen);
@@ -63,7 +65,8 @@ public class TokeniserTest {
         assertEquals(tag, el.tagName());
     }
 
-    @Test public void handleSuperLargeAttributeName() {
+    @Test
+    public void handleSuperLargeAttributeName() {
         StringBuilder sb = new StringBuilder(maxBufferLen);
         do {
             sb.append("LargAttributeName");
@@ -82,7 +85,8 @@ public class TokeniserTest {
         assertEquals("foo", attribute.getValue());
     }
 
-    @Test public void handleLargeText() {
+    @Test
+    public void handleLargeText() {
         StringBuilder sb = new StringBuilder(maxBufferLen);
         do {
             sb.append("A Large Amount of Text");
@@ -99,7 +103,8 @@ public class TokeniserTest {
         assertEquals(text, el.text());
     }
 
-    @Test public void handleLargeComment() {
+    @Test
+    public void handleLargeComment() {
         StringBuilder sb = new StringBuilder(maxBufferLen);
         do {
             sb.append("Quite a comment ");
@@ -117,7 +122,8 @@ public class TokeniserTest {
         assertEquals(" " + comment + " ", child.getData());
     }
 
-    @Test public void handleLargeCdata() {
+    @Test
+    public void handleLargeCdata() {
         StringBuilder sb = new StringBuilder(maxBufferLen);
         do {
             sb.append("Quite a lot of CDATA <><><><>");
@@ -136,7 +142,8 @@ public class TokeniserTest {
         assertEquals(cdata, child.getWholeText());
     }
 
-    @Test public void handleLargeTitle() {
+    @Test
+    public void handleLargeTitle() {
         StringBuilder sb = new StringBuilder(maxBufferLen);
         do {
             sb.append("Quite a long title");
@@ -156,26 +163,31 @@ public class TokeniserTest {
         assertEquals(title, doc.title());
     }
 
-    @Test public void cp1252Entities() {
+    @Test
+    public void cp1252Entities() {
         assertEquals("\u20ac", Jsoup.parse("&#0128;").text());
         assertEquals("\u201a", Jsoup.parse("&#0130;").text());
         assertEquals("\u20ac", Jsoup.parse("&#x80;").text());
     }
 
-    @Test public void cp1252EntitiesProduceError() {
+    @Test
+    public void cp1252EntitiesProduceError() {
         Parser parser = new Parser(new HtmlTreeBuilder());
         parser.setTrackErrors(10);
         assertEquals("\u20ac", parser.parseInput("<html><body>&#0128;</body></html>", "").text());
         assertEquals(1, parser.getErrors().size());
     }
 
-    @Test public void cp1252SubstitutionTable() throws UnsupportedEncodingException {
+    @Test
+    public void cp1252SubstitutionTable() throws UnsupportedEncodingException {
         for (int i = 0; i < Tokeniser.win1252Extensions.length; i++) {
-            String s = new String(new byte[]{ (byte) (i + Tokeniser.win1252ExtensionsStart) }, "Windows-1252");
+            String s = new String(new byte[]{(byte) (i + Tokeniser.win1252ExtensionsStart)}, "Windows-1252");
             assertEquals(1, s.length());
 
             // some of these characters are illegal
-            if (s.charAt(0) == '\ufffd') { continue; }
+            if (s.charAt(0) == '\ufffd') {
+                continue;
+            }
 
             assertEquals("At: " + i, s.charAt(0), Tokeniser.win1252Extensions[i]);
         }

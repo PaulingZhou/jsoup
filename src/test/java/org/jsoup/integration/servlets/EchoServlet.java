@@ -2,8 +2,8 @@ package org.jsoup.integration.servlets;
 
 import org.eclipse.jetty.server.Request;
 import org.jsoup.helper.DataUtil;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.integration.TestServer;
+import org.jsoup.internal.StringUtil;
 
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
@@ -20,6 +20,27 @@ import static org.jsoup.nodes.Entities.escape;
 
 public class EchoServlet extends BaseServlet {
     public static final String Url = TestServer.map(EchoServlet.class);
+
+    private static void write(PrintWriter w, String key, String val) {
+        w.println("<tr><th>" + escape(key) + "</th><td>" + escape(val) + "</td></tr>");
+    }
+
+    // allow the servlet to run as a main program, for local test
+    public static void main(String[] args) {
+        TestServer.start();
+        System.out.println(Url);
+    }
+
+    private static boolean maybeEnableMultipart(HttpServletRequest req) {
+        boolean isMulti = req.getContentType() != null
+                && req.getContentType().startsWith("multipart/form-data");
+
+        if (isMulti) {
+            req.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, new MultipartConfigElement(
+                    System.getProperty("java.io.tmpdir")));
+        }
+        return isMulti;
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -44,12 +65,12 @@ public class EchoServlet extends BaseServlet {
         PrintWriter w = res.getWriter();
 
         w.write("<title>Webserver Environment Variables</title>\n" +
-            "    <style type=\"text/css\">\n" +
-            "      body, td, th {font: 10pt Verdana, Arial, sans-serif; text-align: left}\n" +
-            "      th {font-weight: bold}        \n" +
-            "    </style>\n" +
-            "    <body>\n" +
-            "    <table border=\"0\">");
+                "    <style type=\"text/css\">\n" +
+                "      body, td, th {font: 10pt Verdana, Arial, sans-serif; text-align: left}\n" +
+                "      th {font-weight: bold}        \n" +
+                "    </style>\n" +
+                "    <body>\n" +
+                "    <table border=\"0\">");
 
         // some get items
         write(w, "Method", req.getMethod());
@@ -97,26 +118,5 @@ public class EchoServlet extends BaseServlet {
         }
 
         w.println("</table>");
-    }
-
-    private static void write(PrintWriter w, String key, String val) {
-        w.println("<tr><th>" + escape(key) + "</th><td>" + escape(val) + "</td></tr>");
-    }
-
-    // allow the servlet to run as a main program, for local test
-    public static void main(String[] args) {
-        TestServer.start();
-        System.out.println(Url);
-    }
-
-    private static boolean maybeEnableMultipart(HttpServletRequest req) {
-        boolean isMulti = req.getContentType() != null
-            && req.getContentType().startsWith("multipart/form-data");
-
-        if (isMulti) {
-            req.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, new MultipartConfigElement(
-                System.getProperty("java.io.tmpdir")));
-        }
-        return isMulti;
     }
 }

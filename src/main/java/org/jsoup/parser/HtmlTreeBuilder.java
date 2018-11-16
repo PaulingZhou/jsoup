@@ -1,7 +1,7 @@
 package org.jsoup.parser;
 
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.CDataNode;
 import org.jsoup.nodes.Comment;
 import org.jsoup.nodes.DataNode;
@@ -23,6 +23,7 @@ import static org.jsoup.internal.StringUtil.inSorted;
  * HTML Tree Builder; creates a DOM from Tokens.
  */
 public class HtmlTreeBuilder extends TreeBuilder {
+    public static final int MaxScopeSearchDepth = 100; // prevents the parser bogging down in exceptionally broken pages
     // tag searches. must be sorted, used in inSorted. MUST update HtmlTreeBuilderTest if more arrays are added.
     static final String[] TagsSearchInScope = new String[]{"applet", "caption", "html", "marquee", "object", "table", "td", "th"};
     static final String[] TagSearchList = new String[]{"ol", "ul"};
@@ -31,16 +32,13 @@ public class HtmlTreeBuilder extends TreeBuilder {
     static final String[] TagSearchSelectScope = new String[]{"optgroup", "option"};
     static final String[] TagSearchEndTags = new String[]{"dd", "dt", "li", "optgroup", "option", "p", "rp", "rt"};
     static final String[] TagSearchSpecial = new String[]{"address", "applet", "area", "article", "aside", "base", "basefont", "bgsound",
-        "blockquote", "body", "br", "button", "caption", "center", "col", "colgroup", "command", "dd",
-        "details", "dir", "div", "dl", "dt", "embed", "fieldset", "figcaption", "figure", "footer", "form",
-        "frame", "frameset", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html",
-        "iframe", "img", "input", "isindex", "li", "link", "listing", "marquee", "menu", "meta", "nav",
-        "noembed", "noframes", "noscript", "object", "ol", "p", "param", "plaintext", "pre", "script",
-        "section", "select", "style", "summary", "table", "tbody", "td", "textarea", "tfoot", "th", "thead",
-        "title", "tr", "ul", "wbr", "xmp"};
-
-    public static final int MaxScopeSearchDepth = 100; // prevents the parser bogging down in exceptionally broken pages
-
+            "blockquote", "body", "br", "button", "caption", "center", "col", "colgroup", "command", "dd",
+            "details", "dir", "div", "dl", "dt", "embed", "fieldset", "figcaption", "figure", "footer", "form",
+            "frame", "frameset", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html",
+            "iframe", "img", "input", "isindex", "li", "link", "listing", "marquee", "menu", "meta", "nav",
+            "noembed", "noframes", "noscript", "object", "ol", "p", "param", "plaintext", "pre", "script",
+            "section", "select", "style", "summary", "table", "tbody", "td", "textarea", "tfoot", "th", "thead",
+            "title", "tr", "ul", "wbr", "xmp"};
     private HtmlTreeBuilderState state; // the current state
     private HtmlTreeBuilderState originalState; // original / marked state
 
@@ -55,6 +53,8 @@ public class HtmlTreeBuilder extends TreeBuilder {
     private boolean framesetOk; // if ok to go into frameset
     private boolean fosterInserts; // if next inserts should be fostered
     private boolean fragmentParsing; // if parsing a fragment of html
+    // todo: tidy up in specific scope methods
+    private String[] specificScopeTarget = {null};
 
     ParseSettings defaultSettings() {
         return ParseSettings.htmlDefault;
@@ -115,7 +115,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
             // with form correctly
             Elements contextChain = context.parents();
             contextChain.add(0, context);
-            for (Element parent: contextChain) {
+            for (Element parent : contextChain) {
                 if (parent instanceof FormElement) {
                     formElement = (FormElement) parent;
                     break;
@@ -204,7 +204,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
             tokeniser.emit(emptyEnd.reset().name(el.tagName()));  // ensure we get out of whatever state we are in. emitted for yielded processing
             return el;
         }
-        
+
         Element el = new Element(Tag.valueOf(startTag.name(), settings), baseUri, settings.normalizeAttributes(startTag.attributes));
         insert(el);
         return el;
@@ -229,8 +229,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
             if (tag.isKnownTag()) {
                 if (!tag.isEmpty())
                     tokeniser.error("Tag cannot be self closing; not a void tag");
-            }
-            else // unknown tag, remember this is self closing for output
+            } else // unknown tag, remember this is self closing for output
                 tag.setSelfClosing();
         }
         return el;
@@ -284,7 +283,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
 
     Element pop() {
         int size = stack.size();
-        return stack.remove(size-1);
+        return stack.remove(size - 1);
     }
 
     void push(Element element) {
@@ -300,7 +299,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     private boolean isElementInQueue(ArrayList<Element> queue, Element element) {
-        for (int pos = queue.size() -1; pos >= 0; pos--) {
+        for (int pos = queue.size() - 1; pos >= 0; pos--) {
             Element next = queue.get(pos);
             if (next == element) {
                 return true;
@@ -310,7 +309,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     Element getFromStack(String elName) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             if (next.nodeName().equals(elName)) {
                 return next;
@@ -320,7 +319,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     boolean removeFromStack(Element el) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             if (next == el) {
                 stack.remove(pos);
@@ -331,7 +330,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     void popStackToClose(String elName) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             stack.remove(pos);
             if (next.nodeName().equals(elName))
@@ -341,7 +340,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
 
     // elnames is sorted, comes from Constants
     void popStackToClose(String... elNames) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             stack.remove(pos);
             if (inSorted(next.nodeName(), elNames))
@@ -350,7 +349,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     void popStackToBefore(String elName) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             if (next.nodeName().equals(elName)) {
                 break;
@@ -373,7 +372,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     private void clearStackToContext(String... nodeNames) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             if (StringUtil.in(next.nodeName(), nodeNames) || next.nodeName().equals("html"))
                 break;
@@ -384,10 +383,10 @@ public class HtmlTreeBuilder extends TreeBuilder {
 
     Element aboveOnStack(Element el) {
         assert onStack(el);
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element next = stack.get(pos);
             if (next == el) {
-                return stack.get(pos-1);
+                return stack.get(pos - 1);
             }
         }
         return null;
@@ -396,7 +395,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     void insertOnStackAfter(Element after, Element in) {
         int i = stack.lastIndexOf(after);
         Validate.isTrue(i != -1);
-        stack.add(i+1, in);
+        stack.add(i + 1, in);
     }
 
     void replaceOnStack(Element out, Element in) {
@@ -411,7 +410,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
 
     void resetInsertionMode() {
         boolean last = false;
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element node = stack.get(pos);
             if (pos == 0) {
                 last = true;
@@ -458,9 +457,6 @@ public class HtmlTreeBuilder extends TreeBuilder {
         }
     }
 
-    // todo: tidy up in specific scope methods
-    private String[] specificScopeTarget = {null};
-
     private boolean inSpecificScope(String targetName, String[] baseTypes, String[] extraTypes) {
         specificScopeTarget[0] = targetName;
         return inSpecificScope(specificScopeTarget, baseTypes, extraTypes);
@@ -468,7 +464,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
 
     private boolean inSpecificScope(String[] targetNames, String[] baseTypes, String[] extraTypes) {
         // https://html.spec.whatwg.org/multipage/parsing.html#has-an-element-in-the-specific-scope
-        final int bottom = stack.size() -1;
+        final int bottom = stack.size() - 1;
         final int top = bottom > MaxScopeSearchDepth ? bottom - MaxScopeSearchDepth : 0;
         // don't walk too far up the tree
 
@@ -512,7 +508,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     boolean inSelectScope(String targetName) {
-        for (int pos = stack.size() -1; pos >= 0; pos--) {
+        for (int pos = stack.size() - 1; pos >= 0; pos--) {
             Element el = stack.get(pos);
             String elName = el.nodeName();
             if (elName.equals(targetName))
@@ -524,12 +520,12 @@ public class HtmlTreeBuilder extends TreeBuilder {
         return false;
     }
 
-    void setHeadElement(Element headElement) {
-        this.headElement = headElement;
-    }
-
     Element getHeadElement() {
         return headElement;
+    }
+
+    void setHeadElement(Element headElement) {
+        this.headElement = headElement;
     }
 
     boolean isFosterInserts() {
@@ -557,13 +553,13 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     /**
-     11.2.5.2 Closing elements that have implied end tags<p/>
-     When the steps below require the UA to generate implied end tags, then, while the current node is a dd element, a
-     dt element, an li element, an option element, an optgroup element, a p element, an rp element, or an rt element,
-     the UA must pop the current node off the stack of open elements.
-
-     @param excludeTag If a step requires the UA to generate implied end tags but lists an element to exclude from the
-     process, then the UA must perform the above steps as if that element was not in the above list.
+     * 11.2.5.2 Closing elements that have implied end tags<p/>
+     * When the steps below require the UA to generate implied end tags, then, while the current node is a dd element, a
+     * dt element, an li element, an option element, an optgroup element, a p element, an rp element, or an rt element,
+     * the UA must pop the current node off the stack of open elements.
+     *
+     * @param excludeTag If a step requires the UA to generate implied end tags but lists an element to exclude from the
+     *                   process, then the UA must perform the above steps as if that element was not in the above list.
      */
     void generateImpliedEndTags(String excludeTag) {
         while ((excludeTag != null && !currentElement().nodeName().equals(excludeTag)) &&
@@ -583,13 +579,13 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     Element lastFormattingElement() {
-        return formattingElements.size() > 0 ? formattingElements.get(formattingElements.size()-1) : null;
+        return formattingElements.size() > 0 ? formattingElements.get(formattingElements.size() - 1) : null;
     }
 
     Element removeLastFormattingElement() {
         int size = formattingElements.size();
         if (size > 0)
-            return formattingElements.remove(size-1);
+            return formattingElements.remove(size - 1);
         else
             return null;
     }
@@ -597,7 +593,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     // active formatting elements
     void pushActiveFormattingElements(Element in) {
         int numSeen = 0;
-        for (int pos = formattingElements.size() -1; pos >= 0; pos--) {
+        for (int pos = formattingElements.size() - 1; pos >= 0; pos--) {
             Element el = formattingElements.get(pos);
             if (el == null) // marker
                 break;
@@ -639,7 +635,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
             if (entry == null || onStack(entry)) // step 6 - neither marker nor on stack
                 break; // jump to 8, else continue back to 4
         }
-        while(true) {
+        while (true) {
             if (!skip) // step 7: on later than entry
                 entry = formattingElements.get(++pos);
             Validate.notNull(entry); // should not occur, as we break at last element
@@ -654,7 +650,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
             formattingElements.set(pos, newEl);
 
             // 11
-            if (pos == size-1) // if not last entry in list, jump to 7
+            if (pos == size - 1) // if not last entry in list, jump to 7
                 break;
         }
     }
@@ -668,7 +664,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     void removeFromActiveFormattingElements(Element el) {
-        for (int pos = formattingElements.size() -1; pos >= 0; pos--) {
+        for (int pos = formattingElements.size() - 1; pos >= 0; pos--) {
             Element next = formattingElements.get(pos);
             if (next == el) {
                 formattingElements.remove(pos);
@@ -682,7 +678,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
     }
 
     Element getActiveFormattingElement(String nodeName) {
-        for (int pos = formattingElements.size() -1; pos >= 0; pos--) {
+        for (int pos = formattingElements.size() - 1; pos >= 0; pos--) {
             Element next = formattingElements.get(pos);
             if (next == null) // scope marker
                 break;
@@ -717,8 +713,7 @@ public class HtmlTreeBuilder extends TreeBuilder {
         if (isLastTableParent) {
             Validate.notNull(lastTable); // last table cannot be null by this point.
             lastTable.before(in);
-        }
-        else
+        } else
             fosterParent.appendChild(in);
     }
 

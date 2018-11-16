@@ -10,22 +10,22 @@ import java.util.Arrays;
 import java.util.Locale;
 
 /**
- CharacterReader consumes tokens off a string. Used internally by jsoup. API subject to changes.
+ * CharacterReader consumes tokens off a string. Used internally by jsoup. API subject to changes.
  */
 public final class CharacterReader {
     static final char EOF = (char) -1;
-    private static final int maxStringCacheLen = 12;
     static final int maxBufferLen = 1024 * 32; // visible for testing
+    private static final int maxStringCacheLen = 12;
     private static final int readAheadLimit = (int) (maxBufferLen * 0.75);
 
     private final char[] charBuf;
     private final Reader reader;
+    private final String[] stringCache = new String[512]; // holds reused strings in this doc, to lessen garbage
     private int bufLength;
     private int bufSplitPoint;
     private int bufPos;
     private int readerPos;
     private int bufMark;
-    private final String[] stringCache = new String[512]; // holds reused strings in this doc, to lessen garbage
 
     public CharacterReader(Reader input, int sz) {
         Validate.notNull(input);
@@ -41,6 +41,61 @@ public final class CharacterReader {
 
     public CharacterReader(String input) {
         this(new StringReader(input), input.length());
+    }
+
+    /**
+     * Caches short strings, as a flywheel pattern, to reduce GC load. Just for this doc, to prevent leaks.
+     * <p/>
+     * Simplistic, and on hash collisions just falls back to creating a new string, vs a full HashMap with Entry list.
+     * That saves both having to create objects as hash keys, and running through the entry list, at the expense of
+     * some more duplicates.
+     */
+    private static String cacheString(final char[] charBuf, final String[] stringCache, final int start, final int count) {
+        // limit (no cache):
+        if (count > maxStringCacheLen)
+            return new String(charBuf, start, count);
+        if (count < 1)
+            return "";
+
+        // calculate hash:
+        int hash = 0;
+        int offset = start;
+        for (int i = 0; i < count; i++) {
+            hash = 31 * hash + charBuf[offset++];
+        }
+
+        // get from cache
+        final int index = hash & stringCache.length - 1;
+        String cached = stringCache[index];
+
+        if (cached == null) { // miss, add
+            cached = new String(charBuf, start, count);
+            stringCache[index] = cached;
+        } else { // hashcode hit, check equality
+            if (rangeEquals(charBuf, start, count, cached)) { // hit
+                return cached;
+            } else { // hashcode conflict
+                cached = new String(charBuf, start, count);
+                stringCache[index] = cached; // update the cache, as recently used strings are more likely to show up again
+            }
+        }
+        return cached;
+    }
+
+    /**
+     * Check if the value of the provided range equals the string.
+     */
+    static boolean rangeEquals(final char[] charBuf, final int start, int count, final String cached) {
+        if (count == cached.length()) {
+            int i = start;
+            int j = 0;
+            while (count-- != 0) {
+                if (charBuf[i++] != cached.charAt(j++))
+                    return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     private void bufferUp() {
@@ -67,6 +122,7 @@ public final class CharacterReader {
 
     /**
      * Gets the current cursor position in the content.
+     *
      * @return current position
      */
     public int pos() {
@@ -75,6 +131,7 @@ public final class CharacterReader {
 
     /**
      * Tests if all the content has been read.
+     *
      * @return true if nothing left to read.
      */
     public boolean isEmpty() {
@@ -88,6 +145,7 @@ public final class CharacterReader {
 
     /**
      * Get the char at the current position.
+     *
      * @return char
      */
     public char current() {
@@ -123,6 +181,7 @@ public final class CharacterReader {
 
     /**
      * Returns the number of characters between the current position and the next instance of the input char
+     *
      * @param c scan target
      * @return offset between current position and next instance of target. -1 if not found.
      */
@@ -149,9 +208,9 @@ public final class CharacterReader {
         for (int offset = bufPos; offset < bufLength; offset++) {
             // scan to first instance of startchar:
             if (startChar != charBuf[offset])
-                while(++offset < bufLength && startChar != charBuf[offset]) { /* empty */ }
+                while (++offset < bufLength && startChar != charBuf[offset]) { /* empty */ }
             int i = offset + 1;
-            int last = i + seq.length()-1;
+            int last = i + seq.length() - 1;
             if (offset < bufLength && last <= bufLength) {
                 for (int j = 1; i < last && seq.charAt(j) == charBuf[i]; i++, j++) { /* empty */ }
                 if (i == last) // found full sequence
@@ -163,6 +222,7 @@ public final class CharacterReader {
 
     /**
      * Reads characters up to the specific char.
+     *
      * @param c the delimiter
      * @return the chars read
      */
@@ -190,6 +250,7 @@ public final class CharacterReader {
 
     /**
      * Read characters until the first of any delimiters is found.
+     *
      * @param chars delimiters to scan for
      * @return characters read up to the matched delimiter.
      */
@@ -202,7 +263,8 @@ public final class CharacterReader {
         final int charLen = chars.length;
         int i;
 
-        OUTER: while (pos < remaining) {
+        OUTER:
+        while (pos < remaining) {
             for (i = 0; i < charLen; i++) {
                 if (val[pos] == chars[i])
                     break OUTER;
@@ -211,7 +273,7 @@ public final class CharacterReader {
         }
 
         bufPos = pos;
-        return pos > start ? cacheString(charBuf, stringCache, start, pos -start) : "";
+        return pos > start ? cacheString(charBuf, stringCache, start, pos - start) : "";
     }
 
     String consumeToAnySorted(final char... chars) {
@@ -227,7 +289,7 @@ public final class CharacterReader {
             pos++;
         }
         bufPos = pos;
-        return bufPos > start ? cacheString(charBuf, stringCache, start, pos -start) : "";
+        return bufPos > start ? cacheString(charBuf, stringCache, start, pos - start) : "";
     }
 
     String consumeData() {
@@ -238,7 +300,8 @@ public final class CharacterReader {
         final int remaining = bufLength;
         final char[] val = charBuf;
 
-        OUTER: while (pos < remaining) {
+        OUTER:
+        while (pos < remaining) {
             switch (val[pos]) {
                 case '&':
                 case '<':
@@ -249,7 +312,7 @@ public final class CharacterReader {
             }
         }
         bufPos = pos;
-        return pos > start ? cacheString(charBuf, stringCache, start, pos -start) : "";
+        return pos > start ? cacheString(charBuf, stringCache, start, pos - start) : "";
     }
 
     String consumeTagName() {
@@ -261,7 +324,8 @@ public final class CharacterReader {
         final int remaining = bufLength;
         final char[] val = charBuf;
 
-        OUTER: while (pos < remaining) {
+        OUTER:
+        while (pos < remaining) {
             switch (val[pos]) {
                 case '\t':
                 case '\n':
@@ -278,7 +342,7 @@ public final class CharacterReader {
         }
 
         bufPos = pos;
-        return pos > start ? cacheString(charBuf, stringCache, start, pos -start) : "";
+        return pos > start ? cacheString(charBuf, stringCache, start, pos - start) : "";
     }
 
     String consumeToEnd() {
@@ -361,7 +425,7 @@ public final class CharacterReader {
             return false;
 
         for (int offset = 0; offset < scanLength; offset++)
-            if (seq.charAt(offset) != charBuf[bufPos +offset])
+            if (seq.charAt(offset) != charBuf[bufPos + offset])
                 return false;
         return true;
     }
@@ -442,61 +506,6 @@ public final class CharacterReader {
     @Override
     public String toString() {
         return new String(charBuf, bufPos, bufLength - bufPos);
-    }
-
-    /**
-     * Caches short strings, as a flywheel pattern, to reduce GC load. Just for this doc, to prevent leaks.
-     * <p />
-     * Simplistic, and on hash collisions just falls back to creating a new string, vs a full HashMap with Entry list.
-     * That saves both having to create objects as hash keys, and running through the entry list, at the expense of
-     * some more duplicates.
-     */
-    private static String cacheString(final char[] charBuf, final String[] stringCache, final int start, final int count) {
-        // limit (no cache):
-        if (count > maxStringCacheLen)
-            return new String(charBuf, start, count);
-        if (count < 1)
-            return "";
-
-        // calculate hash:
-        int hash = 0;
-        int offset = start;
-        for (int i = 0; i < count; i++) {
-            hash = 31 * hash + charBuf[offset++];
-        }
-
-        // get from cache
-        final int index = hash & stringCache.length - 1;
-        String cached = stringCache[index];
-
-        if (cached == null) { // miss, add
-            cached = new String(charBuf, start, count);
-            stringCache[index] = cached;
-        } else { // hashcode hit, check equality
-            if (rangeEquals(charBuf, start, count, cached)) { // hit
-                return cached;
-            } else { // hashcode conflict
-                cached = new String(charBuf, start, count);
-                stringCache[index] = cached; // update the cache, as recently used strings are more likely to show up again
-            }
-        }
-        return cached;
-    }
-
-    /**
-     * Check if the value of the provided range equals the string.
-     */
-    static boolean rangeEquals(final char[] charBuf, final int start, int count, final String cached) {
-        if (count == cached.length()) {
-            int i = start;
-            int j = 0;
-            while (count-- != 0) {
-                if (charBuf[i++] != cached.charAt(j++))
-                    return false;
-            }
-            return true;
-        }
-        return false;
     }
 
     // just used for testing

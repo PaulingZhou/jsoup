@@ -47,6 +47,7 @@ import static org.jsoup.internal.Normalizer.lowerCase;
 
 /**
  * Implementation of {@link Connection}.
+ *
  * @see org.jsoup.Jsoup#connect(String)
  */
 public class HttpConnection implements Connection {
@@ -56,13 +57,20 @@ public class HttpConnection implements Connection {
      * vs in jsoup, which would otherwise default to {@code Java}. So by default, use a desktop UA.
      */
     public static final String DEFAULT_UA =
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36";
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36";
     private static final String USER_AGENT = "User-Agent";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
     private static final String FORM_URL_ENCODED = "application/x-www-form-urlencoded";
     private static final int HTTP_TEMP_REDIR = 307; // http/1.1 temporary redirect, not in Java's set.
     private static final String DefaultUploadType = "application/octet-stream";
+    private Connection.Request req;
+    private Connection.Response res;
+
+    public HttpConnection() {
+        req = new Request();
+        res = new Response();
+    }
 
     public static Connection connect(String url) {
         Connection con = new HttpConnection();
@@ -76,24 +84,20 @@ public class HttpConnection implements Connection {
         return con;
     }
 
-    public HttpConnection() {
-        req = new Request();
-        res = new Response();
-    }
-
     /**
      * Encodes the input URL into a safe ASCII URL string
+     *
      * @param url unescaped URL
      * @return escaped URL
      */
-	private static String encodeUrl(String url) {
+    private static String encodeUrl(String url) {
         try {
             URL u = new URL(url);
             return encodeUrl(u).toExternalForm();
         } catch (Exception e) {
             return url;
         }
-	}
+    }
 
     static URL encodeUrl(URL u) {
         try {
@@ -113,8 +117,14 @@ public class HttpConnection implements Connection {
         return val.replaceAll("\"", "%22");
     }
 
-    private Connection.Request req;
-    private Connection.Response res;
+    private static boolean needsMultipart(Connection.Request req) {
+        // multipart mode, for files. add the header if we see something with an inputstream, and return a non-null boundary
+        for (Connection.KeyVal keyVal : req.data()) {
+            if (keyVal.hasInputStream())
+                return true;
+        }
+        return false;
+    }
 
     public Connection url(URL url) {
         req.url(url);
@@ -174,15 +184,14 @@ public class HttpConnection implements Connection {
     }
 
     public Connection ignoreHttpErrors(boolean ignoreHttpErrors) {
-		req.ignoreHttpErrors(ignoreHttpErrors);
-		return this;
-	}
+        req.ignoreHttpErrors(ignoreHttpErrors);
+        return this;
+    }
 
     public Connection ignoreContentType(boolean ignoreContentType) {
         req.ignoreContentType(ignoreContentType);
         return this;
     }
-
 
     public Connection data(String key, String value) {
         req.data(KeyVal.create(key, value));
@@ -190,8 +199,8 @@ public class HttpConnection implements Connection {
     }
 
     public Connection sslSocketFactory(SSLSocketFactory sslSocketFactory) {
-	    req.sslSocketFactory(sslSocketFactory);
-	    return this;
+        req.sslSocketFactory(sslSocketFactory);
+        return this;
     }
 
     public Connection data(String key, String filename, InputStream inputStream) {
@@ -215,10 +224,10 @@ public class HttpConnection implements Connection {
 
     public Connection data(String... keyvals) {
         Validate.notNull(keyvals, "Data key value pairs must not be null");
-        Validate.isTrue(keyvals.length %2 == 0, "Must supply an even number of key value pairs");
+        Validate.isTrue(keyvals.length % 2 == 0, "Must supply an even number of key value pairs");
         for (int i = 0; i < keyvals.length; i += 2) {
             String key = keyvals[i];
-            String value = keyvals[i+1];
+            String value = keyvals[i + 1];
             Validate.notEmpty(key, "Data key must not be empty");
             Validate.notNull(value, "Data value must not be null");
             req.data(KeyVal.create(key, value));
@@ -228,7 +237,7 @@ public class HttpConnection implements Connection {
 
     public Connection data(Collection<Connection.KeyVal> data) {
         Validate.notNull(data, "Data collection must not be null");
-        for (Connection.KeyVal entry: data) {
+        for (Connection.KeyVal entry : data) {
             req.data(entry);
         }
         return this;
@@ -253,10 +262,10 @@ public class HttpConnection implements Connection {
         return this;
     }
 
-    public Connection headers(Map<String,String> headers) {
+    public Connection headers(Map<String, String> headers) {
         Validate.notNull(headers, "Header map must not be null");
-        for (Map.Entry<String,String> entry : headers.entrySet()) {
-            req.header(entry.getKey(),entry.getValue());
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            req.header(entry.getKey(), entry.getValue());
         }
         return this;
     }
@@ -331,6 +340,55 @@ public class HttpConnection implements Connection {
             cookies = new LinkedHashMap<>();
         }
 
+        private static String fixHeaderEncoding(String val) {
+            try {
+                byte[] bytes = val.getBytes("ISO-8859-1");
+                if (!looksLikeUtf8(bytes))
+                    return val;
+                return new String(bytes, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                // shouldn't happen as these both always exist
+                return val;
+            }
+        }
+
+        private static boolean looksLikeUtf8(byte[] input) {
+            int i = 0;
+            // BOM:
+            if (input.length >= 3 && (input[0] & 0xFF) == 0xEF
+                    && (input[1] & 0xFF) == 0xBB & (input[2] & 0xFF) == 0xBF) {
+                i = 3;
+            }
+
+            int end;
+            for (int j = input.length; i < j; ++i) {
+                int o = input[i];
+                if ((o & 0x80) == 0) {
+                    continue; // ASCII
+                }
+
+                // UTF-8 leading:
+                if ((o & 0xE0) == 0xC0) {
+                    end = i + 1;
+                } else if ((o & 0xF0) == 0xE0) {
+                    end = i + 2;
+                } else if ((o & 0xF8) == 0xF0) {
+                    end = i + 3;
+                } else {
+                    return false;
+                }
+
+                while (i < end) {
+                    i++;
+                    o = input[i];
+                    if ((o & 0xC0) != 0x80) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         public URL url() {
             return url;
         }
@@ -381,55 +439,6 @@ public class HttpConnection implements Connection {
         public List<String> headers(String name) {
             Validate.notEmpty(name);
             return getHeadersCaseInsensitive(name);
-        }
-
-        private static String fixHeaderEncoding(String val) {
-            try {
-                byte[] bytes = val.getBytes("ISO-8859-1");
-                if (!looksLikeUtf8(bytes))
-                    return val;
-                return new String(bytes, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // shouldn't happen as these both always exist
-                return val;
-            }
-        }
-
-        private static boolean looksLikeUtf8(byte[] input) {
-            int i = 0;
-            // BOM:
-            if (input.length >= 3 && (input[0] & 0xFF) == 0xEF
-                && (input[1] & 0xFF) == 0xBB & (input[2] & 0xFF) == 0xBF) {
-                i = 3;
-            }
-
-            int end;
-            for (int j = input.length; i < j; ++i) {
-                int o = input[i];
-                if ((o & 0x80) == 0) {
-                    continue; // ASCII
-                }
-
-                // UTF-8 leading:
-                if ((o & 0xE0) == 0xC0) {
-                    end = i + 1;
-                } else if ((o & 0xF0) == 0xE0) {
-                    end = i + 2;
-                } else if ((o & 0xF8) == 0xF0) {
-                    end = i + 3;
-                } else {
-                    return false;
-                }
-
-                while (i < end) {
-                    i++;
-                    o = input[i];
-                    if ((o & 0xC0) != 0x80) {
-                        return false;
-                    }
-                }
-            }
-            return true;
         }
 
         public T header(String name, String value) {
@@ -668,6 +677,10 @@ public class HttpConnection implements Connection {
     public static class Response extends HttpConnection.Base<Connection.Response> implements Connection.Response {
         private static final int MAX_REDIRECTS = 20;
         private static final String LOCATION = "Location";
+        /*
+         * Matches XML content types (like text/xml, application/xhtml+xml;charset=UTF8, etc)
+         */
+        private static final Pattern xmlContentTypeRxp = Pattern.compile("(application|text)/\\w*\\+?xml.*");
         private int statusCode;
         private String statusMessage;
         private ByteBuffer byteData;
@@ -679,11 +692,6 @@ public class HttpConnection implements Connection {
         private boolean inputStreamRead = false;
         private int numRedirects = 0;
         private Connection.Request req;
-
-        /*
-         * Matches XML content types (like text/xml, application/xhtml+xml;charset=UTF8, etc)
-         */
-        private static final Pattern xmlContentTypeRxp = Pattern.compile("(application|text)/\\w*\\+?xml.*");
 
         Response() {
             super();
@@ -754,7 +762,7 @@ public class HttpConnection implements Connection {
                     return execute(req, res);
                 }
                 if ((status < 200 || status >= 400) && !req.ignoreHttpErrors())
-                        throw new HttpStatusException("HTTP error fetching URL", status, req.url().toString());
+                    throw new HttpStatusException("HTTP error fetching URL", status, req.url().toString());
 
                 // check that we can handle the returned content type; if not, abort before fetching it
                 String contentType = res.contentType();
@@ -762,7 +770,7 @@ public class HttpConnection implements Connection {
                         && !req.ignoreContentType()
                         && !contentType.startsWith("text/")
                         && !xmlContentTypeRxp.matcher(contentType).matches()
-                        )
+                )
                     throw new UnsupportedMimeTypeException("Unhandled content type. Must be text/*, application/xml, or application/xhtml+xml",
                             contentType, req.url().toString());
 
@@ -784,13 +792,13 @@ public class HttpConnection implements Connection {
                         res.bodyStream = new InflaterInputStream(res.bodyStream, new Inflater(true));
                     }
                     res.bodyStream = ConstrainableInputStream
-                        .wrap(res.bodyStream, DataUtil.bufferSize, req.maxBodySize())
-                        .timeout(startTime, req.timeout())
+                            .wrap(res.bodyStream, DataUtil.bufferSize, req.maxBodySize())
+                            .timeout(startTime, req.timeout())
                     ;
                 } else {
                     res.byteData = DataUtil.emptyByteBuffer();
                 }
-            } catch (IOException e){
+            } catch (IOException e) {
                 // per Java's documentation, this is not necessary, and precludes keepalives. However in practise,
                 // connection errors will not be released quickly enough and can cause a too many open files error.
                 conn.disconnect();
@@ -799,6 +807,167 @@ public class HttpConnection implements Connection {
 
             res.executed = true;
             return res;
+        }
+
+        // set up connection defaults, and details from request
+        private static HttpURLConnection createConnection(Connection.Request req) throws IOException {
+            final HttpURLConnection conn = (HttpURLConnection) (
+                    req.proxy() == null ?
+                            req.url().openConnection() :
+                            req.url().openConnection(req.proxy())
+            );
+
+            conn.setRequestMethod(req.method().name());
+            conn.setInstanceFollowRedirects(false); // don't rely on native redirection support
+            conn.setConnectTimeout(req.timeout());
+            conn.setReadTimeout(req.timeout() / 2); // gets reduced after connection is made and status is read
+
+            if (req.sslSocketFactory() != null && conn instanceof HttpsURLConnection)
+                ((HttpsURLConnection) conn).setSSLSocketFactory(req.sslSocketFactory());
+            if (req.method().hasBody())
+                conn.setDoOutput(true);
+            if (req.cookies().size() > 0)
+                conn.addRequestProperty("Cookie", getRequestCookieString(req));
+            for (Map.Entry<String, List<String>> header : req.multiHeaders().entrySet()) {
+                for (String value : header.getValue()) {
+                    conn.addRequestProperty(header.getKey(), value);
+                }
+            }
+            return conn;
+        }
+
+        private static LinkedHashMap<String, List<String>> createHeaderMap(HttpURLConnection conn) {
+            // the default sun impl of conn.getHeaderFields() returns header values out of order
+            final LinkedHashMap<String, List<String>> headers = new LinkedHashMap<>();
+            int i = 0;
+            while (true) {
+                final String key = conn.getHeaderFieldKey(i);
+                final String val = conn.getHeaderField(i);
+                if (key == null && val == null)
+                    break;
+                i++;
+                if (key == null || val == null)
+                    continue; // skip http1.1 line
+
+                if (headers.containsKey(key))
+                    headers.get(key).add(val);
+                else {
+                    final ArrayList<String> vals = new ArrayList<>();
+                    vals.add(val);
+                    headers.put(key, vals);
+                }
+            }
+            return headers;
+        }
+
+        private static String setOutputContentType(final Connection.Request req) {
+            String bound = null;
+            if (req.hasHeader(CONTENT_TYPE)) {
+                // no-op; don't add content type as already set (e.g. for requestBody())
+                // todo - if content type already set, we could add charset or boundary if those aren't included
+            } else if (needsMultipart(req)) {
+                bound = DataUtil.mimeBoundary();
+                req.header(CONTENT_TYPE, MULTIPART_FORM_DATA + "; boundary=" + bound);
+            } else {
+                req.header(CONTENT_TYPE, FORM_URL_ENCODED + "; charset=" + req.postDataCharset());
+            }
+            return bound;
+        }
+
+        private static void writePost(final Connection.Request req, final OutputStream outputStream, final String bound) throws IOException {
+            final Collection<Connection.KeyVal> data = req.data();
+            final BufferedWriter w = new BufferedWriter(new OutputStreamWriter(outputStream, req.postDataCharset()));
+
+            if (bound != null) {
+                // boundary will be set if we're in multipart mode
+                for (Connection.KeyVal keyVal : data) {
+                    w.write("--");
+                    w.write(bound);
+                    w.write("\r\n");
+                    w.write("Content-Disposition: form-data; name=\"");
+                    w.write(encodeMimeName(keyVal.key())); // encodes " to %22
+                    w.write("\"");
+                    if (keyVal.hasInputStream()) {
+                        w.write("; filename=\"");
+                        w.write(encodeMimeName(keyVal.value()));
+                        w.write("\"\r\nContent-Type: ");
+                        w.write(keyVal.contentType() != null ? keyVal.contentType() : DefaultUploadType);
+                        w.write("\r\n\r\n");
+                        w.flush(); // flush
+                        DataUtil.crossStreams(keyVal.inputStream(), outputStream);
+                        outputStream.flush();
+                    } else {
+                        w.write("\r\n\r\n");
+                        w.write(keyVal.value());
+                    }
+                    w.write("\r\n");
+                }
+                w.write("--");
+                w.write(bound);
+                w.write("--");
+            } else if (req.requestBody() != null) {
+                // data will be in query string, we're sending a plaintext body
+                w.write(req.requestBody());
+            } else {
+                // regular form data (application/x-www-form-urlencoded)
+                boolean first = true;
+                for (Connection.KeyVal keyVal : data) {
+                    if (!first)
+                        w.append('&');
+                    else
+                        first = false;
+
+                    w.write(URLEncoder.encode(keyVal.key(), req.postDataCharset()));
+                    w.write('=');
+                    w.write(URLEncoder.encode(keyVal.value(), req.postDataCharset()));
+                }
+            }
+            w.close();
+        }
+
+        private static String getRequestCookieString(Connection.Request req) {
+            StringBuilder sb = StringUtil.borrowBuilder();
+            boolean first = true;
+            for (Map.Entry<String, String> cookie : req.cookies().entrySet()) {
+                if (!first)
+                    sb.append("; ");
+                else
+                    first = false;
+                sb.append(cookie.getKey()).append('=').append(cookie.getValue());
+                // todo: spec says only ascii, no escaping / encoding defined. validate on set? or escape somehow here?
+            }
+            return StringUtil.releaseBuilder(sb);
+        }
+
+        // for get url reqs, serialise the data map into the url
+        private static void serialiseRequestUrl(Connection.Request req) throws IOException {
+            URL in = req.url();
+            StringBuilder url = StringUtil.borrowBuilder();
+            boolean first = true;
+            // reconstitute the query, ready for appends
+            url
+                    .append(in.getProtocol())
+                    .append("://")
+                    .append(in.getAuthority()) // includes host, port
+                    .append(in.getPath())
+                    .append("?");
+            if (in.getQuery() != null) {
+                url.append(in.getQuery());
+                first = false;
+            }
+            for (Connection.KeyVal keyVal : req.data()) {
+                Validate.isFalse(keyVal.hasInputStream(), "InputStream data not supported in URL query string.");
+                if (!first)
+                    url.append('&');
+                else
+                    first = false;
+                url
+                        .append(URLEncoder.encode(keyVal.key(), DataUtil.defaultCharset))
+                        .append('=')
+                        .append(URLEncoder.encode(keyVal.value(), DataUtil.defaultCharset));
+            }
+            req.url(new URL(StringUtil.releaseBuilder(url)));
+            req.data().clear(); // moved into url as get params
         }
 
         public int statusCode() {
@@ -859,7 +1028,7 @@ public class HttpConnection implements Connection {
                 body = Charset.forName(DataUtil.defaultCharset).decode(byteData).toString();
             else
                 body = Charset.forName(charset).decode(byteData).toString();
-            ((Buffer)byteData).rewind(); // cast to avoid covariant return type change in jdk9
+            ((Buffer) byteData).rewind(); // cast to avoid covariant return type change in jdk9
             return body;
         }
 
@@ -880,33 +1049,6 @@ public class HttpConnection implements Connection {
             Validate.isFalse(inputStreamRead, "Request has already been read");
             inputStreamRead = true;
             return ConstrainableInputStream.wrap(bodyStream, DataUtil.bufferSize, req.maxBodySize());
-        }
-
-        // set up connection defaults, and details from request
-        private static HttpURLConnection createConnection(Connection.Request req) throws IOException {
-            final HttpURLConnection conn = (HttpURLConnection) (
-                req.proxy() == null ?
-                req.url().openConnection() :
-                req.url().openConnection(req.proxy())
-            );
-
-            conn.setRequestMethod(req.method().name());
-            conn.setInstanceFollowRedirects(false); // don't rely on native redirection support
-            conn.setConnectTimeout(req.timeout());
-            conn.setReadTimeout(req.timeout() / 2); // gets reduced after connection is made and status is read
-
-            if (req.sslSocketFactory() != null && conn instanceof HttpsURLConnection)
-                ((HttpsURLConnection) conn).setSSLSocketFactory(req.sslSocketFactory());
-            if (req.method().hasBody())
-                conn.setDoOutput(true);
-            if (req.cookies().size() > 0)
-                conn.addRequestProperty("Cookie", getRequestCookieString(req));
-            for (Map.Entry<String, List<String>> header : req.multiHeaders().entrySet()) {
-                for (String value : header.getValue()) {
-                    conn.addRequestProperty(header.getKey(), value);
-                }
-            }
-            return conn;
         }
 
         /**
@@ -950,30 +1092,6 @@ public class HttpConnection implements Connection {
             }
         }
 
-        private static LinkedHashMap<String, List<String>> createHeaderMap(HttpURLConnection conn) {
-            // the default sun impl of conn.getHeaderFields() returns header values out of order
-            final LinkedHashMap<String, List<String>> headers = new LinkedHashMap<>();
-            int i = 0;
-            while (true) {
-                final String key = conn.getHeaderFieldKey(i);
-                final String val = conn.getHeaderField(i);
-                if (key == null && val == null)
-                    break;
-                i++;
-                if (key == null || val == null)
-                    continue; // skip http1.1 line
-
-                if (headers.containsKey(key))
-                    headers.get(key).add(val);
-                else {
-                    final ArrayList<String> vals = new ArrayList<>();
-                    vals.add(val);
-                    headers.put(key, vals);
-                }
-            }
-            return headers;
-        }
-
         void processResponseHeaders(Map<String, List<String>> resHeaders) {
             for (Map.Entry<String, List<String>> entry : resHeaders.entrySet()) {
                 String name = entry.getKey();
@@ -999,127 +1117,6 @@ public class HttpConnection implements Connection {
                 }
             }
         }
-
-        private static String setOutputContentType(final Connection.Request req) {
-            String bound = null;
-            if (req.hasHeader(CONTENT_TYPE)) {
-                // no-op; don't add content type as already set (e.g. for requestBody())
-                // todo - if content type already set, we could add charset or boundary if those aren't included
-            }
-            else if (needsMultipart(req)) {
-                bound = DataUtil.mimeBoundary();
-                req.header(CONTENT_TYPE, MULTIPART_FORM_DATA + "; boundary=" + bound);
-            } else {
-                req.header(CONTENT_TYPE, FORM_URL_ENCODED + "; charset=" + req.postDataCharset());
-            }
-            return bound;
-        }
-
-        private static void writePost(final Connection.Request req, final OutputStream outputStream, final String bound) throws IOException {
-            final Collection<Connection.KeyVal> data = req.data();
-            final BufferedWriter w = new BufferedWriter(new OutputStreamWriter(outputStream, req.postDataCharset()));
-
-            if (bound != null) {
-                // boundary will be set if we're in multipart mode
-                for (Connection.KeyVal keyVal : data) {
-                    w.write("--");
-                    w.write(bound);
-                    w.write("\r\n");
-                    w.write("Content-Disposition: form-data; name=\"");
-                    w.write(encodeMimeName(keyVal.key())); // encodes " to %22
-                    w.write("\"");
-                    if (keyVal.hasInputStream()) {
-                        w.write("; filename=\"");
-                        w.write(encodeMimeName(keyVal.value()));
-                        w.write("\"\r\nContent-Type: ");
-                        w.write(keyVal.contentType() != null ? keyVal.contentType() : DefaultUploadType);
-                        w.write("\r\n\r\n");
-                        w.flush(); // flush
-                        DataUtil.crossStreams(keyVal.inputStream(), outputStream);
-                        outputStream.flush();
-                    } else {
-                        w.write("\r\n\r\n");
-                        w.write(keyVal.value());
-                    }
-                    w.write("\r\n");
-                }
-                w.write("--");
-                w.write(bound);
-                w.write("--");
-            } else if (req.requestBody() != null) {
-                // data will be in query string, we're sending a plaintext body
-                w.write(req.requestBody());
-            }
-            else {
-                // regular form data (application/x-www-form-urlencoded)
-                boolean first = true;
-                for (Connection.KeyVal keyVal : data) {
-                    if (!first)
-                        w.append('&');
-                    else
-                        first = false;
-
-                    w.write(URLEncoder.encode(keyVal.key(), req.postDataCharset()));
-                    w.write('=');
-                    w.write(URLEncoder.encode(keyVal.value(), req.postDataCharset()));
-                }
-            }
-            w.close();
-        }
-
-        private static String getRequestCookieString(Connection.Request req) {
-            StringBuilder sb = StringUtil.borrowBuilder();
-            boolean first = true;
-            for (Map.Entry<String, String> cookie : req.cookies().entrySet()) {
-                if (!first)
-                    sb.append("; ");
-                else
-                    first = false;
-                sb.append(cookie.getKey()).append('=').append(cookie.getValue());
-                // todo: spec says only ascii, no escaping / encoding defined. validate on set? or escape somehow here?
-            }
-            return StringUtil.releaseBuilder(sb);
-        }
-
-        // for get url reqs, serialise the data map into the url
-        private static void serialiseRequestUrl(Connection.Request req) throws IOException {
-            URL in = req.url();
-            StringBuilder url = StringUtil.borrowBuilder();
-            boolean first = true;
-            // reconstitute the query, ready for appends
-            url
-                .append(in.getProtocol())
-                .append("://")
-                .append(in.getAuthority()) // includes host, port
-                .append(in.getPath())
-                .append("?");
-            if (in.getQuery() != null) {
-                url.append(in.getQuery());
-                first = false;
-            }
-            for (Connection.KeyVal keyVal : req.data()) {
-                Validate.isFalse(keyVal.hasInputStream(), "InputStream data not supported in URL query string.");
-                if (!first)
-                    url.append('&');
-                else
-                    first = false;
-                url
-                    .append(URLEncoder.encode(keyVal.key(), DataUtil.defaultCharset))
-                    .append('=')
-                    .append(URLEncoder.encode(keyVal.value(), DataUtil.defaultCharset));
-            }
-            req.url(new URL(StringUtil.releaseBuilder(url)));
-            req.data().clear(); // moved into url as get params
-        }
-    }
-
-    private static boolean needsMultipart(Connection.Request req) {
-        // multipart mode, for files. add the header if we see something with an inputstream, and return a non-null boundary
-        for (Connection.KeyVal keyVal : req.data()) {
-            if (keyVal.hasInputStream())
-                return true;
-        }
-        return false;
     }
 
     public static class KeyVal implements Connection.KeyVal {
@@ -1128,6 +1125,9 @@ public class HttpConnection implements Connection {
         private InputStream stream;
         private String contentType;
 
+        private KeyVal() {
+        }
+
         public static KeyVal create(String key, String value) {
             return new KeyVal().key(key).value(value);
         }
@@ -1135,8 +1135,6 @@ public class HttpConnection implements Connection {
         public static KeyVal create(String key, String filename, InputStream stream) {
             return new KeyVal().key(key).value(filename).inputStream(stream);
         }
-
-        private KeyVal() {}
 
         public KeyVal key(String key) {
             Validate.notEmpty(key, "Data key must not be empty");

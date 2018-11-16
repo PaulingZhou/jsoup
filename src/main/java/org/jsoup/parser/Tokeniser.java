@@ -1,7 +1,7 @@
 package org.jsoup.parser;
 
-import org.jsoup.internal.StringUtil;
 import org.jsoup.helper.Validate;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Entities;
 
 import java.util.Arrays;
@@ -11,12 +11,10 @@ import java.util.Arrays;
  */
 final class Tokeniser {
     static final char replacementChar = '\uFFFD'; // replaces null character
-    private static final char[] notCharRefCharsSorted = new char[]{'\t', '\n', '\r', '\f', ' ', '<', '&'};
-
     // Some illegal character escapes are parsed by browsers as windows-1252 instead. See issue #1034
     // https://html.spec.whatwg.org/multipage/parsing.html#numeric-character-reference-end-state
     static final int win1252ExtensionsStart = 0x80;
-    static final int[] win1252Extensions = new int[] {
+    static final int[] win1252Extensions = new int[]{
             // we could build this manually, but Windows-1252 is not a standard java charset so that could break on
             // some platforms - this table is verified with a test
             0x20AC, 0x0081, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
@@ -24,6 +22,7 @@ final class Tokeniser {
             0x0090, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
             0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x009D, 0x017E, 0x0178,
     };
+    private static final char[] notCharRefCharsSorted = new char[]{'\t', '\n', '\r', '\f', ' ', '<', '&'};
 
     static {
         Arrays.sort(notCharRefCharsSorted);
@@ -31,20 +30,20 @@ final class Tokeniser {
 
     private final CharacterReader reader; // html input
     private final ParseErrorList errors; // errors found while tokenising
-
-    private TokeniserState state = TokeniserState.Data; // current tokenisation state
-    private Token emitPending; // the token we are about to emit on next read
-    private boolean isEmitPending = false;
-    private String charsString = null; // characters pending an emit. Will fall to charsBuilder if more than one
-    private StringBuilder charsBuilder = new StringBuilder(1024); // buffers characters to output as one token, if more than one emit per read
+    final private int[] codepointHolder = new int[1]; // holder to not have to keep creating arrays
+    final private int[] multipointHolder = new int[2];
     StringBuilder dataBuffer = new StringBuilder(1024); // buffers data looking for </script>
-
     Token.Tag tagPending; // tag we are building up
     Token.StartTag startPending = new Token.StartTag();
     Token.EndTag endPending = new Token.EndTag();
     Token.Character charPending = new Token.Character();
     Token.Doctype doctypePending = new Token.Doctype(); // doctype building up
     Token.Comment commentPending = new Token.Comment(); // comment building up
+    private TokeniserState state = TokeniserState.Data; // current tokenisation state
+    private Token emitPending; // the token we are about to emit on next read
+    private boolean isEmitPending = false;
+    private String charsString = null; // characters pending an emit. Will fall to charsBuilder if more than one
+    private StringBuilder charsBuilder = new StringBuilder(1024); // buffers characters to output as one token, if more than one emit per read
     private String lastStartTag; // the last start tag emitted, to test appropriate end tag
 
     Tokeniser(CharacterReader reader, ParseErrorList errors) {
@@ -93,8 +92,7 @@ final class Tokeniser {
         // does not set isEmitPending; read checks that
         if (charsString == null) {
             charsString = str;
-        }
-        else {
+        } else {
             if (charsBuilder.length() == 0) { // switching to string builder as more than one emit before read
                 charsBuilder.append(charsString);
             }
@@ -127,8 +125,6 @@ final class Tokeniser {
         this.state = state;
     }
 
-    final private int[] codepointHolder = new int[1]; // holder to not have to keep creating arrays
-    final private int[] multipointHolder = new int[2];
     int[] consumeCharacterReference(Character additionalAllowedCharacter, boolean inAttribute) {
         if (reader.isEmpty())
             return null;
@@ -195,7 +191,7 @@ final class Tokeniser {
             if (numChars == 1) {
                 codeRef[0] = multipointHolder[0];
                 return codeRef;
-            } else if (numChars ==2) {
+            } else if (numChars == 2) {
                 return multipointHolder;
             } else {
                 Validate.fail("Unexpected characters returned for " + nameRef);
@@ -271,6 +267,7 @@ final class Tokeniser {
 
     /**
      * Utility method to consume reader and unescape entities found within.
+     *
      * @param inAttribute if the text to be unescaped is in an attribute
      * @return unescaped string from reader
      */
@@ -281,7 +278,7 @@ final class Tokeniser {
             if (reader.matches('&')) {
                 reader.consume();
                 int[] c = consumeCharacterReference(null, inAttribute);
-                if (c == null || c.length==0)
+                if (c == null || c.length == 0)
                     builder.append('&');
                 else {
                     builder.appendCodePoint(c[0]);

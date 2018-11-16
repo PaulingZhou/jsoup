@@ -1,25 +1,27 @@
 package org.jsoup.internal;
 
 import org.jsoup.Jsoup;
-import org.jsoup.internal.StringUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.jsoup.internal.StringUtil.*;
+import static org.jsoup.internal.StringUtil.normaliseWhitespace;
+import static org.jsoup.internal.StringUtil.resolve;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class StringUtilTest {
 
-    @Test public void join() {
+    @Test
+    public void join() {
         assertEquals("", StringUtil.join(Arrays.asList(""), " "));
         assertEquals("one", StringUtil.join(Arrays.asList("one"), " "));
         assertEquals("one two three", StringUtil.join(Arrays.asList("one", "two", "three"), " "));
     }
 
-    @Test public void padding() {
+    @Test
+    public void padding() {
         assertEquals("", StringUtil.padding(0));
         assertEquals(" ", StringUtil.padding(1));
         assertEquals("  ", StringUtil.padding(2));
@@ -27,7 +29,8 @@ public class StringUtilTest {
         assertEquals("                                             ", StringUtil.padding(45));
     }
 
-    @Test public void paddingInACan() {
+    @Test
+    public void paddingInACan() {
         String[] padding = StringUtil.padding;
         assertEquals(21, padding.length);
         for (int i = 0; i < padding.length; i++) {
@@ -35,7 +38,8 @@ public class StringUtilTest {
         }
     }
 
-    @Test public void isBlank() {
+    @Test
+    public void isBlank() {
         assertTrue(StringUtil.isBlank(null));
         assertTrue(StringUtil.isBlank(""));
         assertTrue(StringUtil.isBlank("      "));
@@ -45,7 +49,8 @@ public class StringUtilTest {
         assertFalse(StringUtil.isBlank("   hello   "));
     }
 
-    @Test public void isNumeric() {
+    @Test
+    public void isNumeric() {
         assertFalse(StringUtil.isNumeric(null));
         assertFalse(StringUtil.isNumeric(" "));
         assertFalse(StringUtil.isNumeric("123 546"));
@@ -56,26 +61,29 @@ public class StringUtilTest {
         assertTrue(StringUtil.isNumeric("1234"));
     }
 
-    @Test public void isWhitespace() {
+    @Test
+    public void isWhitespace() {
         assertTrue(StringUtil.isWhitespace('\t'));
         assertTrue(StringUtil.isWhitespace('\n'));
         assertTrue(StringUtil.isWhitespace('\r'));
         assertTrue(StringUtil.isWhitespace('\f'));
         assertTrue(StringUtil.isWhitespace(' '));
-        
+
         assertFalse(StringUtil.isWhitespace('\u00a0'));
         assertFalse(StringUtil.isWhitespace('\u2000'));
         assertFalse(StringUtil.isWhitespace('\u3000'));
     }
 
-    @Test public void normaliseWhiteSpace() {
+    @Test
+    public void normaliseWhiteSpace() {
         assertEquals(" ", normaliseWhitespace("    \r \n \r\n"));
         assertEquals(" hello there ", normaliseWhitespace("   hello   \r \n  there    \n"));
         assertEquals("hello", normaliseWhitespace("hello"));
         assertEquals("hello there", normaliseWhitespace("hello\nthere"));
     }
 
-    @Test public void normaliseWhiteSpaceHandlesHighSurrogates() {
+    @Test
+    public void normaliseWhiteSpaceHandlesHighSurrogates() {
         String test71540chars = "\ud869\udeb2\u304b\u309a  1";
         String test71540charsExpectedSingleWhitespace = "\ud869\udeb2\u304b\u309a 1";
 
@@ -84,7 +92,8 @@ public class StringUtilTest {
         assertEquals(test71540charsExpectedSingleWhitespace, extractedText);
     }
 
-    @Test public void resolvesRelativeUrls() {
+    @Test
+    public void resolvesRelativeUrls() {
         assertEquals("http://example.com/one/two?three", resolve("http://example.com", "./one/two?three"));
         assertEquals("http://example.com/one/two?three", resolve("http://example.com?one", "./one/two?three"));
         assertEquals("http://example.com/one/two?three#four", resolve("http://example.com", "./one/two?three#four"));
